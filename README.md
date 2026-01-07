@@ -1,2 +1,3 @@
-# celerix-dev-toolbox
-celerix dev toolbox is a high-performance "Swiss Army Knife" for your daily development workflow.
+# 🛠 Celerix Dev Toolbox
+
+**A lightweight, local-first developer productivity suite.**
