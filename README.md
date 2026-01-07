@@ -3,7 +3,7 @@
 **A lightweight, local-first developer productivity suite.**
 
 ![Release Version](https://img.shields.io/github/v/release/celerix-dev/celerix-dev-toolbox?label=Pre-Alpha&color=orange)
-![License](https://img.shields.io/badge/license-Custom-blue)
+![License](https://img.shields.io/badge/license-MIT-blue)
 ![Platform Support](https://img.shields.io/badge/platform-macOS%20|%20Windows%20|%20Linux-lightgrey)
 
 ---
