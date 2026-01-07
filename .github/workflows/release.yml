@@ -79,16 +79,3 @@ jobs:
           releaseName: 'Celerix ${{ github.ref_name }}'
           releaseDraft: true
           args: ${{ matrix.args }}
-
-      - name: Mirror Release to Public Repo
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.PUBLIC_REPO_TOKEN }}
-          repo_name: DonkersSolutions/Celerix
-          # The double asterisk safely finds the installers in any subfolder
-          file: src-tauri/target/**/release/bundle/*/*
-          tag: ${{ github.ref }}
-          overwrite: true
-          file_glob: true
-          release_name: 'Celerix ${{ github.ref_name }}'
-          body: 'Platform: ${{ matrix.arch_name }}'
