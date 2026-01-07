@@ -1,3 +1,9 @@
+//! Git operations and utilities for the Celerix development toolbox.
+//!
+//! This module provides a high-level API for interacting with Git repositories,
+//! including status, commits, branching, stashing, and SSH key management.
+//! Most functions are exposed as Tauri commands for use in the frontend.
+
 use serde::{Serialize, Deserialize};
 use std::path::PathBuf;
 use tokio::fs;
@@ -5,58 +11,97 @@ use tokio::process::Command;
 use base64::{Engine as _, engine::general_purpose};
 use tauri::Manager;
 
+/// Represents a Git branch.
 #[derive(Serialize, Deserialize)]
 pub struct GitBranch {
+    /// The name of the branch.
     pub name: String,
+    /// Whether this is the currently checked-out branch.
     pub is_current: bool,
 }
 
+/// Represents a Git stash entry.
 #[derive(Serialize, Deserialize)]
 pub struct GitStash {
+    /// The index of the stash (e.g., 0 for stash@{0}).
     pub index: usize,
+    /// The stash message.
     pub message: String,
+    /// The branch name where the stash was created.
     pub branch: String,
 }
 
+/// Represents a Git remote.
 #[derive(Serialize, Deserialize)]
 pub struct GitRemote {
+    /// The name of the remote (e.g., "origin").
     pub name: String,
+    /// The URL of the remote.
     pub url: String,
 }
 
+/// Represents a file within a Git commit.
 #[derive(Serialize, Deserialize)]
 pub struct GitCommitFile {
+    /// The path to the file.
     pub path: String,
+    /// The status of the file in the commit (e.g., "A" for added, "M" for modified).
     pub status: String,
 }
 
+/// Represents a Git commit with full metadata.
 #[derive(Serialize, Deserialize)]
 pub struct GitCommit {
+    /// The full commit hash.
     pub hash: String,
+    /// The name of the author.
     pub author: String,
+    /// The email of the author.
     pub author_email: String,
+    /// The commit subject line.
     pub message: String,
+    /// The full commit body.
     pub body: String,
+    /// The author date (UNIX timestamp as string).
     pub date: String,
+    /// Hashes of the parent commits.
     pub parents: Vec<String>,
+    /// Branches that point to this commit.
     pub branches: Vec<String>,
+    /// Tags associated with this commit.
     pub tags: Vec<String>,
 }
 
+/// Represents the status of a file in the working directory or index.
 #[derive(Serialize, Deserialize)]
 pub struct GitStatusFile {
+    /// The path to the file.
     pub path: String,
+    /// The Git status code (e.g., "M ", " M", "??").
     pub status: String,
+    /// Whether the change is staged for commit.
     pub is_staged: bool,
 }
 
+/// Information about SSH keys for Git authentication.
 #[derive(Serialize, Deserialize)]
 pub struct SshKeyInfo {
+    /// The content of the public key.
     pub public_key: String,
+    /// Whether an SSH key exists at the expected path.
     pub has_key: bool,
+    /// The file path to the private key.
     pub path: String,
 }
 
+/// Executes a git command in the specified directory.
+///
+/// # Arguments
+/// * `path` - The working directory for the git command.
+/// * `args` - The arguments to pass to the git command.
+///
+/// # Errors
+/// Returns an error message if the command fails to execute.
 async fn run_git_command(path: &str, args: &[&str]) -> Result<std::process::Output, String> {
     Command::new("git")
         .arg("-C").arg(path)
@@ -68,6 +113,10 @@ async fn run_git_command(path: &str, args: &[&str]) -> Result<std::process::Outp
         .map_err(|e| format!("Failed to execute git {}: {}", args.get(0).unwrap_or(&"command"), e))
 }
 
+/// Clears the local avatar cache.
+///
+/// # Errors
+/// Returns an error if the cache directory cannot be accessed or deleted.
 #[tauri::command]
 pub async fn clear_avatar_cache(app_handle: tauri::AppHandle) -> Result<(), String> {
     let cache_dir = app_handle.path().app_cache_dir().map_err(|e| e.to_string())?.join("avatars");
@@ -77,6 +126,16 @@ pub async fn clear_avatar_cache(app_handle: tauri::AppHandle) -> Result<(), Stri
     Ok(())
 }
 
+/// Fetches an avatar for a given email and name, checking remote services and local cache.
+///
+/// # Arguments
+/// * `app_handle` - Tauri application handle for path resolution.
+/// * `email` - The author's email.
+/// * `name` - The author's name.
+/// * `repo_path` - Optional path to the repository for remote-specific avatar resolution.
+///
+/// # Errors
+/// Returns an error if the avatar cannot be fetched or saved to cache.
 #[tauri::command]
 pub async fn get_avatar(app_handle: tauri::AppHandle, email: String, name: String, repo_path: Option<String>) -> Result<String, String> {
     let email = email.trim().to_lowercase();
@@ -101,7 +160,7 @@ pub async fn get_avatar(app_handle: tauri::AppHandle, email: String, name: Strin
         if let Ok(output) = run_git_command(&path, &["remote", "-v"]).await {
             let remote_info = String::from_utf8_lossy(&output.stdout);
             if remote_info.contains("github.com") {
-                // Try to get GitHub username using `gh` CLI if available
+                // Try to get a GitHub username using `gh` CLI if available
                 let gh_username = Command::new("gh")
                     .args(&["api", "user", "--jq", ".login"])
                     .output()
@@ -165,6 +224,10 @@ pub async fn get_avatar(app_handle: tauri::AppHandle, email: String, name: Strin
     Err("Failed to fetch avatar".to_string())
 }
 
+/// Returns the git status of the repository at the given path.
+///
+/// # Errors
+/// Returns an error if the path is not a git repository or if the git command fails.
 #[tauri::command]
 pub async fn get_git_status(path: String) -> Result<Vec<GitStatusFile>, String> {
     {
@@ -191,6 +254,16 @@ pub async fn get_git_status(path: String) -> Result<Vec<GitStatusFile>, String> 
     Ok(status_files)
 }
 
+/// Creates a new git commit.
+///
+/// # Arguments
+/// * `path` - Path to the git repository.
+/// * `subject` - The commit subject line.
+/// * `body` - The commit body.
+/// * `amend` - Whether to amend the previous commit.
+///
+/// # Errors
+/// Returns an error if the commit fails.
 #[tauri::command]
 pub async fn git_commit(path: String, subject: String, body: String, amend: bool) -> Result<(), String> {
     let mut args = vec!["commit"];
@@ -205,6 +278,10 @@ pub async fn git_commit(path: String, subject: String, body: String, amend: bool
     Ok(())
 }
 
+/// Stages a single file.
+///
+/// # Errors
+/// Returns an error if the git add command fails.
 #[tauri::command]
 pub async fn git_stage_file(path: String, file_path: String) -> Result<(), String> {
     let output = run_git_command(&path, &["add", &file_path]).await?;
@@ -212,6 +289,10 @@ pub async fn git_stage_file(path: String, file_path: String) -> Result<(), Strin
     Ok(())
 }
 
+/// Stages all changes in the repository.
+///
+/// # Errors
+/// Returns an error if the git add command fails.
 #[tauri::command]
 pub async fn git_stage_all(path: String) -> Result<(), String> {
     let output = run_git_command(&path, &["add", "-A"]).await?;
@@ -219,6 +300,10 @@ pub async fn git_stage_all(path: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Unstages a single file.
+///
+/// # Errors
+/// Returns an error if the git reset command fails.
 #[tauri::command]
 pub async fn git_unstage_file(path: String, file_path: String) -> Result<(), String> {
     let output = run_git_command(&path, &["reset", "HEAD", "--", &file_path]).await?;
@@ -226,6 +311,10 @@ pub async fn git_unstage_file(path: String, file_path: String) -> Result<(), Str
     Ok(())
 }
 
+/// Unstages all changes.
+///
+/// # Errors
+/// Returns an error if the git reset command fails.
 #[tauri::command]
 pub async fn git_unstage_all(path: String) -> Result<(), String> {
     let output = run_git_command(&path, &["reset", "HEAD"]).await?;
@@ -233,6 +322,14 @@ pub async fn git_unstage_all(path: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Discards changes in the specified files.
+///
+/// # Arguments
+/// * `path` - Path to the git repository.
+/// * `files` - List of file paths to discard changes for.
+///
+/// # Errors
+/// Returns an error if checkout or clean commands fail.
 #[tauri::command]
 pub async fn git_discard_changes(path: String, files: Vec<String>) -> Result<(), String> {
     if files.is_empty() { return Ok(()); }
@@ -268,6 +365,17 @@ pub async fn git_discard_changes(path: String, files: Vec<String>) -> Result<(),
     Ok(())
 }
 
+/// Saves changes to the stash.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+/// * `files` - List of file paths to stash.
+/// * `message` - Optional message to describe the stash.
+///
+/// # Errors
+///
+/// Returns an error if stashing fails.
 #[tauri::command]
 pub async fn git_stash_save(path: String, files: Vec<String>, message: Option<String>) -> Result<(), String> {
     if files.is_empty() { return Ok(()); }
@@ -299,6 +407,16 @@ pub async fn git_stash_save(path: String, files: Vec<String>, message: Option<St
     Ok(())
 }
 
+/// Drops a specific stash entry.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+/// * `index` - The index of the stash to drop.
+///
+/// # Errors
+///
+/// Returns an error if the stash entry cannot be dropped.
 #[tauri::command]
 pub async fn git_stash_drop(path: String, index: usize) -> Result<(), String> {
     let stash_ref = format!("stash@{{{}}}", index);
@@ -309,6 +427,16 @@ pub async fn git_stash_drop(path: String, index: usize) -> Result<(), String> {
     Ok(())
 }
 
+/// Pops a specific stash entry.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+/// * `index` - The index of the stash to pop.
+///
+/// # Errors
+///
+/// Returns an error if the stash entry cannot be popped.
 #[tauri::command]
 pub async fn git_stash_pop(path: String, index: usize) -> Result<(), String> {
     let stash_ref = format!("stash@{{{}}}", index);
@@ -319,6 +447,16 @@ pub async fn git_stash_pop(path: String, index: usize) -> Result<(), String> {
     Ok(())
 }
 
+/// Returns the Git diff for a specific file.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+/// * `file_path` - Path to the file to get the diff for.
+///
+/// # Errors
+///
+/// Returns an error if the diff command fails.
 #[tauri::command]
 pub async fn get_git_diff(path: String, file_path: String) -> Result<String, String> {
     let output = run_git_command(&path, &["diff", "HEAD", "--", &file_path]).await?;
@@ -355,6 +493,15 @@ pub async fn get_git_diff(path: String, file_path: String) -> Result<String, Str
     Ok(diff)
 }
 
+/// Returns a list of local Git branches.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+///
+/// # Errors
+///
+/// Returns an error if the repository cannot be opened or branches cannot be listed.
 #[tauri::command]
 pub fn get_git_branches(path: String) -> Result<Vec<GitBranch>, String> {
     let repo = gix::open(&path).or_else(|_| gix::discover(&path)).map_err(|e| e.to_string())?;
@@ -373,6 +520,15 @@ pub fn get_git_branches(path: String) -> Result<Vec<GitBranch>, String> {
     Ok(branches)
 }
 
+/// Returns a list of Git commits.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+///
+/// # Errors
+///
+/// Returns an error if the Git log command fails.
 #[tauri::command]
 pub async fn get_git_commits(path: String) -> Result<Vec<GitCommit>, String> {
     // Use a custom format with a unique delimiter to handle multi-line bodies and special characters
@@ -439,6 +595,16 @@ pub async fn get_git_commits(path: String) -> Result<Vec<GitCommit>, String> {
     Ok(commits)
 }
 
+/// Returns a list of files in a specific commit.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+/// * `hash` - The full commit hash.
+///
+/// # Errors
+///
+/// Returns an error if the Git show command fails.
 #[tauri::command]
 pub async fn get_commit_files(path: String, hash: String) -> Result<Vec<GitCommitFile>, String> {
     let output = run_git_command(&path, &["show", "--name-status", "--format=", &hash]).await?;
@@ -460,9 +626,20 @@ pub async fn get_commit_files(path: String, hash: String) -> Result<Vec<GitCommi
     Ok(files)
 }
 
+/// Returns the diff for a specific file within a commit.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+/// * `hash` - The full commit hash.
+/// * `file_path` - Path to the file.
+///
+/// # Errors
+///
+/// Returns an error if the Git show diff command fails.
 #[tauri::command]
 pub async fn get_commit_file_diff(path: String, hash: String, file_path: String) -> Result<String, String> {
-    // Actually we want the diff. 'git show hash -- file_path' shows the diff.
+    // Actually, we want the diff. 'git show hash -- file_path' shows the diff.
     let output = run_git_command(&path, &["show", "--format=", &hash, "--", &file_path]).await?;
     if !output.status.success() {
         return Err(format!("Git show diff failed: {}", String::from_utf8_lossy(&output.stderr)));
@@ -470,6 +647,15 @@ pub async fn get_commit_file_diff(path: String, hash: String, file_path: String)
     Ok(String::from_utf8_lossy(&output.stdout).to_string())
 }
 
+/// Returns a list of Git remotes for the repository.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+///
+/// # Errors
+///
+/// Returns an error if the repository cannot be opened.
 #[tauri::command]
 pub fn get_git_remotes(path: String) -> Result<Vec<GitRemote>, String> {
     let repo = gix::open(&path).or_else(|_| gix::discover(&path)).map_err(|e| e.to_string())?;
@@ -486,6 +672,16 @@ pub fn get_git_remotes(path: String) -> Result<Vec<GitRemote>, String> {
     Ok(remotes)
 }
 
+/// Switches the current branch.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+/// * `branch_name` - The name of the branch to switch to.
+///
+/// # Errors
+///
+/// Returns an error if the Git checkout command fails.
 #[tauri::command]
 pub async fn switch_branch(path: String, branch_name: String) -> Result<(), String> {
     let output = run_git_command(&path, &["checkout", &branch_name]).await?;
@@ -493,6 +689,15 @@ pub async fn switch_branch(path: String, branch_name: String) -> Result<(), Stri
     Ok(())
 }
 
+/// Returns a list of remote Git branches.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+///
+/// # Errors
+///
+/// Returns an error if the repository cannot be opened.
 #[tauri::command]
 pub fn get_git_remote_branches(path: String) -> Result<Vec<String>, String> {
     let repo = gix::open(&path).or_else(|_| gix::discover(&path)).map_err(|e| e.to_string())?;
@@ -508,6 +713,15 @@ pub fn get_git_remote_branches(path: String) -> Result<Vec<String>, String> {
     Ok(branches)
 }
 
+/// Returns a list of Git tags.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+///
+/// # Errors
+///
+/// Returns an error if the repository cannot be opened.
 #[tauri::command]
 pub fn get_git_tags(path: String) -> Result<Vec<String>, String> {
     let repo = gix::open(&path).or_else(|_| gix::discover(&path)).map_err(|e| e.to_string())?;
@@ -523,6 +737,15 @@ pub fn get_git_tags(path: String) -> Result<Vec<String>, String> {
     Ok(tags)
 }
 
+/// Returns a list of Git stashes.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+///
+/// # Errors
+///
+/// Returns an error if the Git stash list command fails.
 #[tauri::command]
 pub async fn get_git_stashes(path: String) -> Result<Vec<GitStash>, String> {
     let output = run_git_command(&path, &["stash", "list", "--format=%gd|%s|%gD"]).await?;
@@ -535,7 +758,7 @@ pub async fn get_git_stashes(path: String) -> Result<Vec<GitStash>, String> {
     for line in stdout.lines() {
         let parts: Vec<&str> = line.split('|').collect();
         if parts.len() >= 3 {
-            // %gd is stash@{0}, %s is subject, %gD is reflog selector
+            // %gd is stash@{0}, %s is subject, %gD is a reflog selector
             let index_str = parts[0].trim_start_matches("stash@{").trim_end_matches("}");
             let index = index_str.parse::<usize>().unwrap_or(0);
             let message = parts[1].to_string();
@@ -546,6 +769,17 @@ pub async fn get_git_stashes(path: String) -> Result<Vec<GitStash>, String> {
     Ok(stashes)
 }
 
+/// Check out a remote branch.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+/// * `remote_branch` - The name of the remote branch to check out.
+/// * `new_branch_name` - Optional name for the new local branch.
+///
+/// # Errors
+///
+/// Returns an error if the checkout command fails or if the local branch already exists.
 #[tauri::command]
 pub async fn git_checkout_remote_branch(path: String, remote_branch: String, new_branch_name: Option<String>) -> Result<(), String> {
     let exists = {
@@ -570,6 +804,11 @@ pub async fn git_checkout_remote_branch(path: String, remote_branch: String, new
     Ok(())
 }
 
+/// Returns SSH key information.
+///
+/// # Errors
+///
+/// Returns an error if the home directory cannot be determined.
 #[tauri::command]
 pub async fn get_ssh_key_info() -> Result<SshKeyInfo, String> {
     let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).map_err(|_| "No home dir")?;
@@ -583,6 +822,11 @@ pub async fn get_ssh_key_info() -> Result<SshKeyInfo, String> {
     }
 }
 
+/// Generates a new SSH key pair.
+///
+/// # Errors
+///
+/// Returns an error if key generation fails or if a key already exists.
 #[tauri::command]
 pub async fn generate_ssh_key() -> Result<SshKeyInfo, String> {
     let home = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")).map_err(|_| "No home dir")?;
@@ -595,6 +839,15 @@ pub async fn generate_ssh_key() -> Result<SshKeyInfo, String> {
     get_ssh_key_info().await
 }
 
+/// Fetches from all remotes.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+///
+/// # Errors
+///
+/// Returns an error if the Git fetch command fails.
 #[tauri::command]
 pub async fn git_fetch(path: String) -> Result<(), String> {
     let output = run_git_command(&path, &["fetch", "--all"]).await?;
@@ -602,6 +855,15 @@ pub async fn git_fetch(path: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Pulls from the current branch's upstream.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+///
+/// # Errors
+///
+/// Returns an error if the Git pull command fails.
 #[tauri::command]
 pub async fn git_pull(path: String) -> Result<(), String> {
     let output = run_git_command(&path, &["pull"]).await?;
@@ -609,6 +871,15 @@ pub async fn git_pull(path: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Pushes the current branch.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+///
+/// # Errors
+///
+/// Returns an error if the Git push command fails.
 #[tauri::command]
 pub async fn git_push(path: String) -> Result<(), String> {
     let output = run_git_command(&path, &["push"]).await?;
@@ -652,6 +923,19 @@ pub async fn git_push(path: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Creates a new Git tag.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+/// * `tag_name` - Name of the tag.
+/// * `commit_hash` - The commit hash to tag.
+/// * `message` - Optional annotation message.
+/// * `push_all` - Whether to push all tags to the remote.
+///
+/// # Errors
+///
+/// Returns an error if the tag creation or push fails.
 #[tauri::command]
 pub async fn git_create_tag(path: String, tag_name: String, commit_hash: String, message: Option<String>, push_all: bool) -> Result<(), String> {
     let mut args = vec!["tag".to_string()];
@@ -681,7 +965,7 @@ pub async fn git_create_tag(path: String, tag_name: String, commit_hash: String,
             return Err(format!("Git push --tags failed: {}", String::from_utf8_lossy(&output.stderr)));
         }
     } else {
-        // Push only the new tag to current remote
+        // Push only the new tag to the current remote
         // We can find the current remote by looking at the branch's upstream
         let remotes = get_git_remotes(path.clone())?;
         if !remotes.is_empty() {
@@ -697,6 +981,18 @@ pub async fn git_create_tag(path: String, tag_name: String, commit_hash: String,
     Ok(())
 }
 
+/// Creates a new Git branch.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+/// * `branch_name` - Name of the new branch.
+/// * `start_point` - The commit or branch to start the new branch from.
+/// * `checkout` - Whether to switch to the new branch immediately.
+///
+/// # Errors
+///
+/// Returns an error if branch creation or checkout fails.
 #[tauri::command]
 pub async fn git_create_branch(path: String, branch_name: String, start_point: String, checkout: bool) -> Result<(), String> {
     if checkout {
@@ -709,6 +1005,17 @@ pub async fn git_create_branch(path: String, branch_name: String, start_point: S
     Ok(())
 }
 
+/// Deletes a Git branch.
+///
+/// # Arguments
+///
+/// * `path` - Path to the Git repository.
+/// * `branch_name` - Name of the branch to delete.
+/// * `delete_remote` - Whether to also delete the branch from all remotes.
+///
+/// # Errors
+///
+/// Returns an error if branch deletion fails or if trying to delete the current branch.
 #[tauri::command]
 pub async fn git_delete_branch(path: String, branch_name: String, delete_remote: bool) -> Result<(), String> {
     // Check if it's the current branch
