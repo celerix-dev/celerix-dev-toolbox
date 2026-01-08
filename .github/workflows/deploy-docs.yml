@@ -30,8 +30,10 @@ jobs:
           cache: 'npm'
       - name: Install dependencies
         run: npm install
+        working-directory: ./docs
       - name: Build with VitePress
-        run: npm run docs:build # Assumes "docs:build": "vitepress build docs" in package.json
+        run: npm run docs:build
+        working-directory: ./docs
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
