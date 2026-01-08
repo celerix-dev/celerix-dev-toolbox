@@ -55,10 +55,3 @@ Once launched, you'll see the **Unified Dashboard**. Here are the three pillars 
 Because we believe in **Open Sovereignty**, we encourage you to verify our claims:
 * **Audit the Code:** All logic is open-source at [github.com/celerix-dev](https://github.com/celerix-dev).
 * **Check the Traffic:** Use a tool like Wireshark or Little Snitch while using Celerix. You will see zero outgoing traffic to our servers.
-
----
-
-## Next Steps
-* [Explore the Utility Suite](./tools/index.md)
-* [Configure your Git Integration](./guides/git-setup.md)
-* [Learn how to Contribute](../CONTRIBUTING.md)
