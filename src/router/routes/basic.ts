@@ -7,7 +7,6 @@ import UUIDView from "@/views/UUIDView.vue";
 import JWTView from "@/views/JWTView.vue";
 
 import KanbanView from "@/views/KanbanView.vue";
-import GitGuiView from "@/views/GitGuiView.vue";
 
 // Define the routes for the generic routes
 export const basicRoutes: RouteRecordRaw[] = [
@@ -25,11 +24,6 @@ export const basicRoutes: RouteRecordRaw[] = [
                 path: '/kanban',
                 name: 'kanban-index',
                 component: KanbanView
-            },
-            {
-                path: '/git-gui',
-                name: 'git-gui-index',
-                component: GitGuiView
             },
             {
                 path: 'base64',

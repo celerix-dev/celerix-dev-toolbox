@@ -45,11 +45,6 @@ const isLinkActive = (itemPath: string) => {
             <div class="d-flex"><i class="ti ti-layout-kanban fs-4"></i> <div class="ps-2">Kanban Board</div></div>
           </router-link>
         </li>
-        <li class="nav-item">
-          <router-link :class="`nav-link pt-3 pb-3 ` + (isLinkActive('/git-gui') ? 'active' : '')" :to="{ name: 'git-gui-index' }">
-            <div class="d-flex"><i class="ti ti-brand-git fs-4"></i> <div class="ps-2">Git GUI</div></div>
-          </router-link>
-        </li>
         <li class="mt-3">
           <h6 class="sidebar-header">Tools</h6>
         </li>

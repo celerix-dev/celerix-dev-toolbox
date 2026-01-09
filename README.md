@@ -31,11 +31,6 @@ Focused tools to keep your project on track:
 * **Widget Dashboard:** A customizable space for your daily dev stats.
 * **Kanban Board:** Drag-and-drop task management, stored locally in your toolbox.
 
-### 🐙 Git GUI (Experimental)
-A visual interface for your local repositories.
-* **Prerequisite:** You must have **Git** installed on your system, and SSH setup, the app can help you with that step (See GitGUI → Settings)
-* **Status:** Supports basic git operations branches/commits/pull/push/fetch/tags/stashes.
-
 ### ⚙️ Developer Utilities
 * **UUID Generator:** Fast, offline ID generation.
 * **BASE64 Encode/Decode:** Encode and/or Decode base64 strings in a flash.
@@ -47,16 +42,6 @@ While **Data Portability** is a core pillar of this project, please be aware tha
 
 * **Compatibility:** Export files created in an older version may not be compatible with newer versions until we reach a stable data format (v1.0).
 * **Recommendation:** Keep a backup of your data, but expect to perform a "fresh start" if the data structure undergoes a major shift between updates.
-
----
-
-### 🪟 Windows Support Status
-Windows is currently a **secondary preview platform**.
-
-* **Core Tools:** All local utilities (JSON, UUID, etc.) and mini apps use cross-platform logic and are fully functional.
-* **Git Operations:** We use **Gix** for high-performance, read-only operations, which work across all platforms. However, operations requiring **SSH authentication** currently shell out to system Git.
-* **Current Limitation:** Due to differences in path handling and line endings (`CRLF`), SSH-based operations on Windows are experimental and not currently optimized.
-* **Focus:** We are not actively troubleshooting Windows-specific Git/SSH issues while we focus on core feature stability for macOS and Linux.
 
 ---
 
@@ -85,11 +70,11 @@ To install the `.deb` or `.rpm`package and ensure all dependencies are correctly
 
 Debian/Ubuntu:
 ```shell
-sudo apt install ./Celerix_0.1.5_amd64.deb
+sudo apt install ./Celerix_0.1.6_amd64.deb
 ``` 
 Fedora/RHEL/OpenSUSE:
 ```shell
-sudo dnf install ./Celerix-0.1.5-1.x86_64.rpm
+sudo dnf install ./Celerix-0.1.6-1.x86_64.rpm
 ```
 
 ---

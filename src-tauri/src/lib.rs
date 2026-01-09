@@ -1,4 +1,3 @@
-mod git;
 mod utils;
 
 use tauri::{
@@ -42,37 +41,6 @@ pub fn run() {
             utils::generate_uuid,
             utils::generate_bulk_uuid,
             utils::decode_jwt,
-            git::get_git_branches,
-            git::get_git_commits,
-            git::get_commit_files,
-            git::get_commit_file_diff,
-            git::get_git_remotes,
-            git::get_git_remote_branches,
-            git::get_git_tags,
-            git::get_git_stashes,
-            git::git_checkout_remote_branch,
-            git::switch_branch,
-            git::get_ssh_key_info,
-            git::generate_ssh_key,
-            git::get_git_status,
-            git::get_git_diff,
-            git::get_avatar,
-            git::clear_avatar_cache,
-            git::git_commit,
-            git::git_stage_file,
-            git::git_stage_all,
-            git::git_unstage_file,
-            git::git_unstage_all,
-            git::git_fetch,
-            git::git_pull,
-            git::git_push,
-            git::git_create_branch,
-            git::git_create_tag,
-            git::git_delete_branch,
-            git::git_discard_changes,
-            git::git_stash_save,
-            git::git_stash_drop,
-            git::git_stash_pop
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
