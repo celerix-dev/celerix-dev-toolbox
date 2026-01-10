@@ -98,4 +98,4 @@ Visit the **[Releases](https://github.com/celerix-dev/celerix-dev-toolbox/releas
 ## 📜 License
 See the [LICENSE](./LICENSE) file for the terms.
 
-*Copyright © 2026 Marc W. Donkers*
+*Copyright © 2026 Celerix*
