@@ -25,3 +25,4 @@ uuid = { version = "1", features = ["v1", "v4", "v7", "js"] }
 serde = { version = "1", features = ["derive"] }
 tauri-plugin-dialog = "2.4.2"
 tauri-plugin-fs = "2.4.4"
+tauri-plugin-pty = "0.2.0"

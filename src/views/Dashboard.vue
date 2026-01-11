@@ -234,6 +234,7 @@ const importWidgets = async () => {
   </div>
 
   <AddWidgetModal @add="addWidget" />
+
 </template>
 
 <style scoped>

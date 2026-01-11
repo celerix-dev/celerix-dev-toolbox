@@ -2,8 +2,12 @@
 import ApplicationHeader from '@/components/Basic/ApplicationHeader.vue';
 import {useRoute} from 'vue-router';
 import logo from '@/assets/logo.svg';
+import {ref} from "vue";
+import CelerixTerminal from "@/components/CelerixTerminal.vue";
+import {WebviewWindow} from "@tauri-apps/api/webviewWindow";
 
 const route = useRoute();
+const terminalVisible = ref(false);
 
 const isLinkActive = (itemPath: string) => {
   const currentPath = route.path;
@@ -14,6 +18,23 @@ const isLinkActive = (itemPath: string) => {
   // Or it's a sub-path (standard behavior)
   return currentPath === itemPath || activeMenu === itemPath;
 };
+
+const openTerminalInWindow = async () => {
+  const id = Math.random().toString(36).substring(7);
+
+  const webview = new WebviewWindow(`term-${id}`, {
+    url: '/terminal',
+    title: 'Celerix Terminal',
+    width: 900,
+    height: 600,
+    decorations: true,
+    shadow: true,
+  });
+
+  await webview.once('tauri://created', async () => {
+    await webview.setFocus();
+  });
+}
 </script>
 
 <template>
@@ -83,15 +104,23 @@ const isLinkActive = (itemPath: string) => {
   <!-- Header content -->
   <ApplicationHeader/>
 
-  <div class="position-absolute" style="bottom:10px;left:10px;">
+  <div class="position-absolute d-flex justify-content-between align-items-center flex-grow-1" style="width:300px;bottom:10px;left:10px;">
     <div class="d-flex align-items-center">
       <img draggable="false" :src="logo" alt="Logo" width="32" height="32"
            class=""/>
       <div class="ps-1">Celerix</div>
     </div>
+    <div>
+      <div class="btn btn-secondary btn-sm" @click="terminalVisible = !terminalVisible"><i class="ti ti-terminal"></i></div>
+      <div class="btn btn-secondary btn-sm" @click="openTerminalInWindow"><i class="ti ti-window"></i></div>
+    </div>
   </div>
 
   <div class="p-2" style="height: calc(100% - 61px)">
     <RouterView/>
+  </div>
+
+  <div v-show="terminalVisible" class="terminal-overlay position-absolute" style="left:320px;right:0;bottom:0;">
+    <CelerixTerminal />
   </div>
 </template>

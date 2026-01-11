@@ -7,6 +7,7 @@ import UUIDView from "@/views/UUIDView.vue";
 import JWTView from "@/views/JWTView.vue";
 
 import KanbanView from "@/views/KanbanView.vue";
+import Terminal from "@/views/Terminal.vue";
 
 // Define the routes for the generic routes
 export const basicRoutes: RouteRecordRaw[] = [
@@ -56,5 +57,10 @@ export const basicRoutes: RouteRecordRaw[] = [
                 component: Dummy
             }
         ]
+    },
+    {
+        path: '/terminal',
+        name: 'terminal',
+        component: Terminal
     }
 ];
