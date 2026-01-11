@@ -22,6 +22,8 @@
 * **No Bloat:** A native desktop experience that stays out of your way (~35MB RAM usage).
 * **Privacy:** No tracking, no cloud-syncing, no accounts required.
 
+<img src="https://raw.githubusercontent.com/celerix-dev/celerix-dev-toolbox/main/public/assets/celerix-dev-toolbox.png" width="400" alt="Celerix Developer Toolbox" />
+
 ---
 
 ## ✨ Current Features
