@@ -34,6 +34,7 @@
 Focused tools to keep your project on track:
 * **Widget Dashboard:** A customizable space for your daily dev stats.
 * **Kanban Board:** Drag-and-drop task management, stored locally in your toolbox.
+* **Terminal:** A customizable terminal as overlay or windowed with support for multiple tabs.
 
 ### ⚙️ Developer Utilities
 * **UUID Generator:** Fast, offline ID generation.
