@@ -32,11 +32,14 @@ pub fn run() {
                 .build(app)?;
             Ok(())
         })
+        .plugin(tauri_plugin_screenshots::init())
         .plugin(tauri_plugin_pty::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
+            utils::capture_window,
             utils::base64_encode,
             utils::base64_decode,
             utils::generate_uuid,

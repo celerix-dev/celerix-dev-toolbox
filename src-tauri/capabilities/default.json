@@ -2,7 +2,10 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main", "term-*"],
+  "windows": [
+    "main",
+    "term-*"
+  ],
   "permissions": [
     "core:default",
     "opener:default",
@@ -10,8 +13,21 @@
     "dialog:default",
     "fs:default",
     "fs:allow-write-text-file",
+    "fs:allow-write-file",
     "fs:allow-read-text-file",
+    "fs:allow-exists",
+    "fs:allow-mkdir",
+    {
+      "identifier": "fs:scope-appdata-recursive",
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
+    },
     "pty:default",
+    "process:allow-restart",
+    "screenshots:default",
     "core:webview:default",
     "core:window:allow-create",
     "core:window:allow-show",
