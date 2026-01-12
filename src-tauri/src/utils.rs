@@ -13,7 +13,7 @@ pub struct JwtParts {
 
 #[tauri::command]
 pub async fn capture_window(window: WebviewWindow) -> Result<String, String> {
-    // 1. Get current window title to help identify it
+    // 1. Get the current window title to help identify it
     let title = window.title().map_err(|e| e.to_string())?;
     
     // 2. Get all windows and find our match

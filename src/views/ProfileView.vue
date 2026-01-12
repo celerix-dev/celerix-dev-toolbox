@@ -85,7 +85,7 @@ const saveProfile = async () => {
           </div>
         </div>
 
-        <div class="card mt-4 shadow-sm border-0 bg-light-subtle">
+        <div class="card mt-4 shadow-sm border-0 bg-secondary-subtle">
           <div class="card-body">
             <h6 class="card-title"><i class="ti ti-info-circle me-1 text-primary"></i> Future Synchronization</h6>
             <p class="card-text small text-muted">

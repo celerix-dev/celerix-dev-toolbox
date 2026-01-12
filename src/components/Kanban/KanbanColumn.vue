@@ -180,7 +180,7 @@ const handleUpdateCard = (card: KanbanCard) => {
                 <a class="dropdown-item flex-grow-1" href="#" @click.prevent="emit('useTemplate', column.id, template)" data-bs-dismiss="dropdown">
                   {{ template.title }}
                 </a>
-                <button class="btn btn-xs btn-link text-danger p-0" @click.stop="emit('deleteTemplate', template.id)">
+                <button class="btn btn-xs text-danger p-0" @click.stop="emit('deleteTemplate', template.id)">
                   <i class="ti ti-trash"></i>
                 </button>
               </li>
