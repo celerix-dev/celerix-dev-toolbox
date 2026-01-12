@@ -213,7 +213,7 @@ const removeUser = (index: number) => {
   <div class="container-fluid py-4">
     <div class="row mb-4">
       <div class="col-12">
-        <div class="card bg-light-subtle border-0 shadow-sm">
+        <div class="card bg-secondary-subtle border-0 shadow-sm">
           <div class="card-body">
             <h5 class="card-title">Manage Your Projects</h5>
             <p class="card-text text-muted">
@@ -248,7 +248,7 @@ const removeUser = (index: number) => {
                 </div>
               </div>
               <button 
-                class="btn btn-sm btn-link p-0 text-muted shadow-none border-0 no-focus-ring" 
+                class="btn btn-sm p-0 text-muted shadow-none border-0 no-focus-ring"
                 @mousedown="openProjectModal(project)"
                 @click="openProjectModal(project)"
                 data-bs-toggle="modal"
@@ -352,13 +352,13 @@ const removeUser = (index: number) => {
                   @click="currentProject.color = color"
                 ></button>
               </div>
-              <div class="icon-picker p-2 bg-light rounded border d-flex flex-wrap gap-2">
+              <div class="icon-picker p-2 bg-light-subtle rounded border d-flex flex-wrap gap-2">
                 <button 
                   v-for="icon in availableIcons" 
                   :key="icon"
                   type="button"
                   class="btn btn-sm"
-                  :class="currentProject.icon === icon ? 'btn-primary' : 'btn-light'"
+                  :class="currentProject.icon === icon ? 'btn-primary' : 'btn-light-subtle'"
                   @click="currentProject.icon = icon"
                   title="icon"
                 >
@@ -392,7 +392,7 @@ const removeUser = (index: number) => {
                     <input v-model="user.nickname" type="text" class="form-control form-control-sm" placeholder="Nick" required>
                   </div>
                   <div class="col-1">
-                    <button type="button" class="btn btn-sm btn-link text-danger p-0" @click="removeUser(index)">
+                    <button type="button" class="btn btn-sm text-danger p-0" @click="removeUser(index)">
                       <i class="ti ti-x fs-5"></i>
                     </button>
                   </div>

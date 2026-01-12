@@ -97,7 +97,7 @@ const updateColor = (color: string) => {
           <h6 class="card-title mb-1 text-truncate pe-4" :title="card.title">{{ card.title }}</h6>
           <div class="dropdown">
             <button 
-              class="btn btn-sm btn-link p-0 shadow-none border-0 no-focus-ring dropdown-toggle" 
+              class="btn btn-sm p-0 shadow-none border-0 no-focus-ring dropdown-toggle"
               type="button"
               data-bs-toggle="dropdown" 
               data-bs-display="static"

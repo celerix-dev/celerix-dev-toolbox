@@ -676,7 +676,7 @@ const colorOptions = ['primary', 'secondary', 'success', 'danger', 'warning', 'i
               <div v-for="item in editingCard.checklist" :key="item.id" class="d-flex align-items-center gap-2 mb-2">
                 <input type="checkbox" v-model="item.completed" class="form-check-input mt-0">
                 <input type="text" v-model="item.text" class="form-control form-control-sm" placeholder="Item text...">
-                <button type="button" class="btn btn-sm btn-link text-danger p-0" @click="removeChecklistItem(item.id)">
+                <button type="button" class="btn btn-sm text-danger p-0" @click="removeChecklistItem(item.id)">
                   <i class="ti ti-x"></i>
                 </button>
               </div>
@@ -685,7 +685,7 @@ const colorOptions = ['primary', 'secondary', 'success', 'danger', 'warning', 'i
 
           <div class="mb-3">
             <label class="form-label d-block mb-2">Activity Log</label>
-            <div class="activity-log p-2 bg-light rounded border">
+            <div class="activity-log p-2  rounded border">
               <div v-if="!cardLogs[editingCard.id] || cardLogs[editingCard.id].length === 0" class="text-center py-2">
                 <small class="text-muted">No activity yet.</small>
               </div>

@@ -221,7 +221,7 @@ onBeforeUnmount(() => {
         <div v-for="(item, index) in editItems" :key="item.id" class="countdown-edit-item p-2 mb-2 border rounded border-secondary border-opacity-25">
           <div class="d-flex justify-content-between align-items-center mb-1">
              <span class="small fw-bold">Countdown #{{ index + 1 }}</span>
-             <button v-if="editItems.length > 1" class="btn btn-xs btn-link text-danger p-0" @click="removeItem(index)">
+             <button v-if="editItems.length > 1" class="btn btn-xs text-danger p-0" @click="removeItem(index)">
                <i class="ti ti-x"></i>
              </button>
           </div>
