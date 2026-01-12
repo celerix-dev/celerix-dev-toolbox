@@ -1,0 +1,21 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Project",
+  "type": "object",
+  "required": ["id", "name", "tag", "icon", "color", "users", "version"],
+  "properties": {
+    "version": { "type": "string" },
+    "id": { "type": "string" },
+    "name": { "type": "string" },
+    "tag": { "type": "string" },
+    "icon": { "type": "string" },
+    "color": { "type": "string" },
+    "description": { "type": "string" },
+    "createdAt": { "type": "number" },
+    "users": {
+      "type": "array",
+      "items": { "$ref": "project-user.schema.json" }
+    }
+  },
+  "additionalProperties": false
+}

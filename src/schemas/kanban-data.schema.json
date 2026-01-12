@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "KanbanData",
+  "type": "object",
+  "required": ["version", "columns"],
+  "properties": {
+    "version": { "type": "string" },
+    "columns": {
+      "type": "array",
+      "items": { "$ref": "kanban-column.schema.json" }
+    }
+  },
+  "additionalProperties": false
+}

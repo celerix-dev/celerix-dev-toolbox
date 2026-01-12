@@ -1,0 +1,14 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "ProjectUser",
+  "type": "object",
+  "required": ["id", "firstName", "lastName", "nickname", "version"],
+  "properties": {
+    "version": { "type": "string" },
+    "id": { "type": "string" },
+    "firstName": { "type": "string" },
+    "lastName": { "type": "string" },
+    "nickname": { "type": "string" }
+  },
+  "additionalProperties": false
+}
