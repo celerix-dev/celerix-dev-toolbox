@@ -160,6 +160,20 @@ const importWidgets = async () => {
 
 <template>
 
+  <div class="dropdown">
+    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+      Button
+    </button>
+    <ul class="dropdown-menu">
+      <li><h6 class="dropdown-header">Header</h6></li>
+      <li><a href="#" class="dropdown-item active" aria-current="true">Dropdown link 1</a></li>
+      <li><a href="#" class="dropdown-item">Dropdown link 2</a></li>
+      <li><a href="#" class="dropdown-item">Dropdown link 3</a></li>
+      <li><hr class="dropdown-divider"></li>
+      <li><a class="dropdown-item disabled">Dropdown link 4</a></li>
+    </ul>
+  </div>
+  
   <teleport to="#breadcrumbs">
     <div class="d-flex align-items-center justify-content-between w-100">
       <div><i class="ti ti-dashboard"></i> <strong>Dashboard</strong></div>

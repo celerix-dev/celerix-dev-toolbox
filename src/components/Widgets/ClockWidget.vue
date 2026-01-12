@@ -57,7 +57,7 @@ const enterEditMode = () => {
         {{ widget.isConfigured ? (widget.label || 'Clock') : 'Configure Clock' }}
       </span>
       <div class="dropdown">
-        <button class="btn btn-sm btn-link p-0" data-bs-toggle="dropdown">
+        <button class="btn btn-sm btn-link p-0 dropdown-toggle no-caret" data-bs-toggle="dropdown">
           <i class="ti ti-dots-vertical"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
@@ -106,5 +106,8 @@ const enterEditMode = () => {
 }
 .clock-display {
   transform: scale(1);
+}
+.no-caret::after {
+  display: none !important;
 }
 </style>

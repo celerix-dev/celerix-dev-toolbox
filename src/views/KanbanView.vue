@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from 'vue';
+import { Modal } from 'bootstrap';
 import draggable from 'vuedraggable';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
@@ -10,6 +11,11 @@ interface KanbanCard {
   title: string;
   description: string;
   color?: string;
+  projectId?: string;
+  priority?: 'low' | 'medium' | 'high' | 'urgent';
+  dueDate?: string;
+  createdAt: number;
+  assignee?: string;
 }
 
 interface KanbanColumn {
@@ -19,7 +25,24 @@ interface KanbanColumn {
   cards: KanbanCard[];
 }
 
+interface ProjectUser {
+  id: string;
+  firstName: string;
+  lastName: string;
+  nickname: string;
+}
+
+interface Project {
+  id: string;
+  name: string;
+  tag: string;
+  icon: string;
+  color: string;
+  users: ProjectUser[];
+}
+
 const columns = ref<KanbanColumn[]>([]);
+const projects = ref<Project[]>([]);
 
 const loadKanban = () => {
   const saved = localStorage.getItem('celerix-kanban-data');
@@ -40,6 +63,17 @@ const loadKanban = () => {
   }
 };
 
+const loadProjects = () => {
+  const saved = localStorage.getItem('celerix-projects');
+  if (saved) {
+    try {
+      projects.value = JSON.parse(saved);
+    } catch (e) {
+      console.error('Failed to load projects', e);
+    }
+  }
+};
+
 const saveKanban = () => {
   localStorage.setItem('celerix-kanban-data', JSON.stringify(columns.value));
 };
@@ -48,6 +82,7 @@ watch(columns, saveKanban, { deep: true });
 
 onMounted(() => {
   loadKanban();
+  loadProjects();
 });
 
 const addColumn = () => {
@@ -70,7 +105,9 @@ const addCard = (columnId: string) => {
       id: crypto.randomUUID(),
       title: 'New Task',
       description: '',
-      color: 'light'
+      color: 'light',
+      priority: 'medium',
+      createdAt: Date.now()
     });
   }
 };
@@ -124,6 +161,46 @@ const updateCard = (columnId: string, updatedCard: KanbanCard) => {
   }
 };
 
+const isEditingCard = ref(false);
+const editingCard = ref<KanbanCard | null>(null);
+const editingColumnId = ref<string | null>(null);
+
+const openEditModal = (columnId: string, card: KanbanCard) => {
+  editingColumnId.value = columnId;
+  editingCard.value = { ...card };
+  isEditingCard.value = true;
+  
+  const modal = new Modal(document.getElementById('cardEditModal') as HTMLElement);
+  modal.show();
+};
+
+const saveCard = () => {
+  if (editingCard.value && editingColumnId.value) {
+    updateCard(editingColumnId.value, editingCard.value);
+    const modalElement = document.getElementById('cardEditModal');
+    const modal = Modal.getInstance(modalElement as HTMLElement);
+    modal?.hide();
+  }
+};
+
+const handleProjectChange = (projectId: string) => {
+  if (!editingCard.value) return;
+  
+  const oldProjectId = editingCard.value.projectId;
+  const newProjectId = projectId === 'undefined' ? undefined : projectId;
+
+  if (oldProjectId !== newProjectId) {
+    const newProject = projects.value.find(p => p.id === newProjectId);
+    if (newProject) {
+      const isAssigneeInNewProject = newProject.users.some(u => u.nickname === editingCard.value?.assignee);
+      if (!isAssigneeInNewProject && editingCard.value.assignee) {
+        editingCard.value.assignee = '';
+      }
+    }
+    editingCard.value.projectId = newProjectId;
+  }
+};
+
 const colorOptions = ['primary', 'secondary', 'success', 'danger', 'warning', 'info', 'light', 'dark'];
 
 </script>
@@ -131,19 +208,22 @@ const colorOptions = ['primary', 'secondary', 'success', 'danger', 'warning', 'i
 <template>
   <teleport to="#breadcrumbs">
     <div class="d-flex align-items-center justify-content-between w-100">
-      <div><i class="ti ti-layout-kanban"></i> <strong>Kanban Board</strong></div>
+      <div class="d-flex align-items-center gap-2">
+        <i class="ti ti-layout-kanban"></i>
+        <strong>Kanban Board</strong>
+      </div>
     </div>
   </teleport>
 
   <teleport to="#page-context">
     <div class="btn-group">
-      <button class="btn btn-secondary" @click="importKanban" title="Import Kanban">
+      <button class="btn btn-secondary d-flex align-items-center gap-1" @click="importKanban" title="Import Kanban">
         <i class="ti ti-download"></i> Import
       </button>
-      <button class="btn btn-secondary" @click="exportKanban" title="Export Kanban">
+      <button class="btn btn-secondary d-flex align-items-center gap-1" @click="exportKanban" title="Export Kanban">
         <i class="ti ti-upload"></i> Export
       </button>
-      <button class="btn btn-primary" @click="addColumn" title="Add Column">
+      <button class="btn btn-primary d-flex align-items-center gap-1" @click="addColumn" title="Add Column">
         <i class="ti ti-plus"></i> Add Column
       </button>
     </div>
@@ -152,27 +232,101 @@ const colorOptions = ['primary', 'secondary', 'success', 'danger', 'warning', 'i
   <div class="kanban-container p-2">
     <draggable 
       v-model="columns" 
-      item-key="id" 
-      tag="div"
-      class="kanban-row d-flex gap-3"
+      item-key="id"
+      class="kanban-row d-flex gap-3 align-items-start"
       handle=".column-header"
       ghost-class="ghost-column"
-      animation="200"
+      :animation="200"
       :force-fallback="true"
-      draggable=".kanban-column"
       :fallback-tolerance="3"
     >
-      <template #item="{ element: column }">
+      <template #item="{ element: column, index }">
         <KanbanColumnComp 
           :column="column" 
           :color-options="colorOptions" 
+          :projects="projects"
           @remove="removeColumn"
           @add-card="addCard"
           @remove-card="removeCard"
           @update-card="updateCard"
+          @edit-card="openEditModal"
+          @update:column="(newCol) => columns[index] = newCol"
         />
       </template>
     </draggable>
+  </div>
+
+  <!-- Card Edit Modal -->
+  <div class="modal fade" id="cardEditModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content" v-if="editingCard">
+        <div class="modal-header">
+          <h5 class="modal-title">Edit Card</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Title</label>
+            <input v-model="editingCard.title" class="form-control" />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea v-model="editingCard.description" class="form-control" rows="3"></textarea>
+          </div>
+          
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">Project</label>
+              <select 
+                :value="editingCard.projectId" 
+                @change="handleProjectChange(($event.target as HTMLSelectElement).value)"
+                class="form-select"
+              >
+                <option :value="undefined">No Project</option>
+                <option v-for="project in projects" :key="project.id" :value="project.id">
+                  {{ project.name }}
+                </option>
+              </select>
+            </div>
+            <div class="col-6">
+              <label class="form-label">Priority</label>
+              <select v-model="editingCard.priority" class="form-select">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+                <option value="urgent">Urgent</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-6">
+              <label class="form-label">Due Date</label>
+              <input type="date" v-model="editingCard.dueDate" class="form-control" />
+            </div>
+            <div class="col-6">
+              <label class="form-label">Assignee</label>
+              <input 
+                type="text" 
+                v-model="editingCard.assignee" 
+                class="form-control" 
+                list="modal-project-users-list"
+                placeholder="Type or select..."
+              />
+              <datalist id="modal-project-users-list">
+                <option v-for="user in projects.find(p => p.id === editingCard?.projectId)?.users" :key="user.id" :value="user.nickname">
+                  {{ user.firstName }} {{ user.lastName }}
+                </option>
+              </datalist>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-primary" @click="saveCard">Save Changes</button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -187,7 +341,7 @@ const colorOptions = ['primary', 'secondary', 'success', 'danger', 'warning', 'i
 }
 .ghost-column {
   opacity: 0.5;
-  background: var(--bs-secondary-bg);
-  border: 2px dashed var(--bs-primary);
+  background: #f8f9fa;
+  border: 2px dashed #ccc;
 }
 </style>

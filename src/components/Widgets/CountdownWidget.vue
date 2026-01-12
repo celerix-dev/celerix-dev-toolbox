@@ -200,7 +200,7 @@ onBeforeUnmount(() => {
         {{ widget.isConfigured ? (widget.label || 'Countdown') : 'Configure Countdown' }}
       </span>
       <div class="dropdown">
-        <button class="btn btn-sm btn-link p-0" data-bs-toggle="dropdown">
+        <button class="btn btn-sm btn-link p-0 dropdown-toggle no-caret" data-bs-toggle="dropdown">
           <i class="ti ti-dots-vertical"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
@@ -357,5 +357,8 @@ onBeforeUnmount(() => {
   padding: 0.1rem 0.4rem;
   font-size: 0.7rem;
   border-radius: 0.2rem;
+}
+.no-caret::after {
+  display: none !important;
 }
 </style>

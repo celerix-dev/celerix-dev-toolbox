@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import ConfirmationModal from './ConfirmationModal.vue';
 import { eventBus } from '@/services/events';
+import router from "@/router";
 
 const showResetConfirm = ref(false);
 
@@ -24,8 +25,12 @@ const handleResetConfirm = () => {
                 </button>
                 <div id="screenshotButton" class="donkers-button round large icon" aria-hidden="true"></div>
 
+                <div class="btn btn-outline-primary" @click="router.push({ name: 'projects' })">
+                  <i class="ti ti-archive"></i> Projects
+                </div>
+
                 <div class="dropdown">
-                    <button class="btn btn-outline-info dropdown-toggle" style="min-width: 70px" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <button class="btn btn-outline-info dropdown-toggle" style="min-width: 70px" type="button" data-bs-toggle="dropdown" data-bs-display="static" data-bs-auto-close="outside" aria-expanded="false">
                         <span>Options</span>
                     </button>
 
