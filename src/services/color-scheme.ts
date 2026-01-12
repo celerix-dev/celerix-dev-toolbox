@@ -7,11 +7,31 @@ export const colorScheme = (() => {
         if (window.matchMedia) {
             const prefersDark = window.matchMedia(`(${pcs}: dark)`);
 
-            prefersDark.addEventListener('change', (e: MediaQueryListEvent) => {
-                dE.setAttribute(dcs, e.matches ? 'dark' : 'light');
-                updateTheme();
+            prefersDark.addEventListener('change', () => {
+                // Only update if we are in 'auto' mode
+                const currentScheme = dE.getAttribute(dcs);
+                const isAuto = !currentScheme || currentScheme === 'auto' || (dE.getAttribute('data-theme-source') === 'auto');
+                
+                if (isAuto) {
+                    applyTheme('auto');
+                }
             });
         }
+    };
+
+    const applyTheme = (theme: 'auto' | 'light' | 'dark') => {
+        let effectiveTheme: 'light' | 'dark';
+        
+        if (theme === 'auto') {
+            effectiveTheme = window.matchMedia(`(${pcs}: dark)`).matches ? 'dark' : 'light';
+            dE.setAttribute('data-theme-source', 'auto');
+        } else {
+            effectiveTheme = theme;
+            dE.setAttribute('data-theme-source', 'manual');
+        }
+        
+        dE.setAttribute(dcs, effectiveTheme);
+        updateTheme();
     };
 
     const updateTheme = () => {
@@ -63,6 +83,7 @@ export const colorScheme = (() => {
     return {
         init,
         getScheme,
+        applyTheme,
         updateTheme,
     };
 })();

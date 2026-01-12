@@ -13,12 +13,14 @@ interface KanbanCard {
   dueDate?: string;
   createdAt: number;
   assignee?: string;
+  checklist?: { id: string; text: string; completed: boolean }[];
 }
 
 interface KanbanColumn {
   id: string;
   title: string;
   color?: string;
+  purpose?: string;
   cards: KanbanCard[];
 }
 
@@ -42,6 +44,8 @@ const props = defineProps<{
   column: KanbanColumn;
   colorOptions: string[];
   projects: Project[];
+  searchQuery?: string;
+  templates?: KanbanCard[];
 }>();
 
 const emit = defineEmits<{
@@ -50,8 +54,18 @@ const emit = defineEmits<{
   (e: 'removeCard', columnId: string, cardId: string): void;
   (e: 'updateCard', columnId: string, card: KanbanCard): void;
   (e: 'editCard', columnId: string, card: KanbanCard): void;
+  (e: 'editColumn', column: KanbanColumn): void;
   (e: 'update:column', column: KanbanColumn): void;
+  (e: 'useTemplate', columnId: string, template: KanbanCard): void;
+  (e: 'deleteTemplate', id: string): void;
+  (e: 'cardMoved', cardId: string, fromColumnId: string, toColumnId: string): void;
 }>();
+
+const onDragChange = (evt: any) => {
+  if (evt.added) {
+    emit('cardMoved', evt.added.element.id, 'unknown', props.column.id);
+  }
+};
 
 const cards = computed({
   get: () => props.column.cards,
@@ -60,64 +74,69 @@ const cards = computed({
   }
 });
 
+const filteredCards = computed(() => {
+  if (!props.searchQuery) return cards.value;
+  
+  const query = props.searchQuery.toLowerCase();
+  const parts = query.split(' ').filter(p => p.trim() !== '');
+  
+  return cards.value.filter(card => {
+    const project = props.projects.find(p => p.id === card.projectId);
+    
+    // Check if ALL parts match something in the card
+    return parts.every(part => {
+      if (part.startsWith('p:')) {
+        const pTag = part.slice(2);
+        if (!pTag) return true; // Just "p:" typed, ignore until more
+        return project?.tag.toLowerCase().includes(pTag) || project?.name.toLowerCase().includes(pTag);
+      }
+      
+      if (part.startsWith('pri:')) {
+        const pri = part.slice(4);
+        if (!pri) return true;
+        return card.priority?.toLowerCase().includes(pri);
+      }
+      
+      if (part.startsWith('u:')) {
+        const u = part.slice(2);
+        if (!u) return true;
+        return card.assignee?.toLowerCase().includes(u);
+      }
+      
+      // Default search in title, description
+      return (
+        card.title.toLowerCase().includes(part) ||
+        card.description.toLowerCase().includes(part) ||
+        card.assignee?.toLowerCase().includes(part) ||
+        project?.name.toLowerCase().includes(part) ||
+        project?.tag.toLowerCase().includes(part)
+      );
+    });
+  });
+});
+
 const handleUpdateCard = (card: KanbanCard) => {
   emit('updateCard', props.column.id, card);
 };
 </script>
 
 <template>
-
-  <div class="dropdown">
-    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-      Button
-    </button>
-    <ul class="dropdown-menu">
-      <li><h6 class="dropdown-header">Header</h6></li>
-      <li><a href="#" class="dropdown-item active" aria-current="true">Dropdown link 1</a></li>
-      <li><a href="#" class="dropdown-item">Dropdown link 2</a></li>
-      <li><a href="#" class="dropdown-item">Dropdown link 3</a></li>
-      <li><hr class="dropdown-divider"></li>
-      <li><a class="dropdown-item disabled">Dropdown link 4</a></li>
-    </ul>
-  </div>
-
   <div class="kanban-column flex-shrink-0">
     <div :class="['card', 'h-100', `border-${column.color}`, 'border-opacity-25', 'bg-transparent']">
       <div :class="['card-header', 'column-header', 'd-flex', 'justify-content-between', 'align-items-center', 'border-0']">
-        <input 
-          v-model="column.title" 
-          :class="['column-title-input', `text-${column.color}`, 'form-control', 'bg-transparent','border-0']"
-        />
-        <div class="dropdown">
-          <button 
-            class="btn btn-sm btn-link p-0 text-muted shadow-none border-0 no-focus-ring dropdown-toggle" 
-            type="button"
-            data-bs-toggle="dropdown" 
-            data-bs-display="static"
-            data-bs-auto-close="outside"
-            aria-expanded="false"
-            @mousedown.stop
-          >
-            <i class="ti ti-dots-vertical"></i>
-          </button>
-          <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-            <li><h6 class="dropdown-header">Header Color</h6></li>
-            <li class="px-2 d-flex flex-wrap gap-1 mb-2" style="max-width: 150px;">
-              <div 
-                v-for="color in colorOptions" 
-                :key="color"
-                :class="['color-box', `bg-${color}`, column.color === color ? 'active' : '']"
-                @click="column.color = color"
-              ></div>
-            </li>
-            <li><hr class="dropdown-divider"></li>
-            <li>
-              <a class="dropdown-item text-danger d-flex align-items-center gap-2" href="#" @click.prevent="emit('remove', column.id)">
-                <i class="ti ti-trash"></i> Remove Column
-              </a>
-            </li>
-          </ul>
+        <div :class="['column-title-static', `text-${column.color}`, 'fw-bold', 'text-truncate']">
+          {{ column.title }}
         </div>
+        <button 
+          class="btn btn-sm btn-outline-secondary opacity-50 text-muted shadow-none no-focus-ring"
+          type="button"
+          data-bs-toggle="modal"
+          data-bs-target="#columnEditModal"
+          @mousedown.stop
+          @click="emit('editColumn', column)"
+        >
+          <i class="ti ti-pencil"></i>
+        </button>
       </div>
       
       <div class="card-body p-2 kanban-column-body d-flex flex-column">
@@ -130,10 +149,13 @@ const handleUpdateCard = (card: KanbanCard) => {
           handle=".drag-handle"
           :animation="200"
           :force-fallback="true"
+          :disabled="!!searchQuery"
           :fallback-tolerance="3"
+          @change="onDragChange"
         >
           <template #item="{ element: card }">
             <KanbanCardComp 
+              v-if="filteredCards.find(c => c.id === card.id)"
               :card="card" 
               :column-id="column.id" 
               :color-options="colorOptions"
@@ -144,9 +166,27 @@ const handleUpdateCard = (card: KanbanCard) => {
             />
           </template>
         </draggable>
-        <button class="btn btn-secondary btn-sm w-100 mt-2 d-flex align-items-center justify-content-center gap-1" @click="emit('addCard', column.id)">
-          <i class="ti ti-plus"></i> Add Card
-        </button>
+        <div v-if="!searchQuery" class="d-flex gap-2 mt-2">
+          <button class="btn btn-secondary btn-sm flex-grow-1 d-flex align-items-center justify-content-center gap-1" @click="emit('addCard', column.id)">
+            <i class="ti ti-plus"></i> Add Card
+          </button>
+          <div class="dropdown" v-if="templates && templates.length > 0">
+            <button class="btn btn-secondary btn-sm d-flex align-items-center justify-content-center gap-1 dropdown-toggle no-caret" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <i class="ti ti-template"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+              <li><h6 class="dropdown-header">Use Template</h6></li>
+              <li v-for="template in templates" :key="template.id" class="d-flex align-items-center pe-2">
+                <a class="dropdown-item flex-grow-1" href="#" @click.prevent="emit('useTemplate', column.id, template)" data-bs-dismiss="dropdown">
+                  {{ template.title }}
+                </a>
+                <button class="btn btn-xs btn-link text-danger p-0" @click.stop="emit('deleteTemplate', template.id)">
+                  <i class="ti ti-trash"></i>
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -167,13 +207,10 @@ const handleUpdateCard = (card: KanbanCard) => {
 .column-header:active {
   cursor: grabbing;
 }
-.column-title-input {
-  background: transparent;
-  border: none;
+.column-title-static {
   font-weight: bold;
   width: 80%;
-  outline: none;
-  cursor: text;
+  padding: 0.375rem 0;
 }
 .card-list {
   min-height: 150px;
@@ -203,6 +240,10 @@ const handleUpdateCard = (card: KanbanCard) => {
 .no-focus-ring:focus {
   outline: none !important;
   box-shadow: none !important;
+}
+.btn-xs {
+  padding: 1px 5px;
+  font-size: 0.75rem;
 }
 .dropdown-toggle::after {
   display: none !important;

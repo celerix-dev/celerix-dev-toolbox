@@ -2,12 +2,48 @@
 import ApplicationHeader from '@/components/Basic/ApplicationHeader.vue';
 import {useRoute} from 'vue-router';
 import logo from '@/assets/logo.svg';
-import {ref} from "vue";
+import {ref, onMounted, computed} from "vue";
 import CelerixTerminal from "@/components/CelerixTerminal.vue";
 import {WebviewWindow} from "@tauri-apps/api/webviewWindow";
+import { useUserStore } from '@/stores/user';
+import { storageService } from '@/services/storage';
 
 const route = useRoute();
+const userStore = useUserStore();
 const terminalVisible = ref(false);
+
+const projects = ref<any[]>([]);
+const isLoadingProjects = ref(true);
+
+onMounted(async () => {
+  if (!userStore.isInitialized) {
+    await userStore.loadUser();
+  }
+  await loadProjects();
+});
+
+const loadProjects = async () => {
+  try {
+    const data = await storageService.load<any>('PROJECTS');
+    if (data && data.projects) {
+      projects.value = data.projects;
+    } else if (Array.isArray(data)) {
+      projects.value = data;
+    }
+  } catch (e) {
+    console.error('Failed to load projects in sidebar', e);
+  } finally {
+    isLoadingProjects.value = false;
+  }
+};
+
+const activeProject = computed(() => {
+  return projects.value.find(p => p.id === userStore.activeProjectId) || null;
+});
+
+const selectProject = (projectId: string | null) => {
+  userStore.setActiveProject(projectId);
+};
 
 const isLinkActive = (itemPath: string) => {
   const currentPath = route.path;
@@ -40,6 +76,44 @@ const openTerminalInWindow = async () => {
 <template>
   <nav class="sidebar offcanvas-start offcanvas-md" tabindex="-1" id="donkers-sidebar">
     <div class="offcanvas-body">
+      <div class="mb-4">
+        <label class="sidebar-header d-block mb-2">Active Project</label>
+        <div class="dropdown">
+          <button 
+            class="btn btn-outline-secondary w-100 d-flex align-items-center justify-content-between dropdown-toggle shadow-none" 
+            type="button" 
+            data-bs-toggle="dropdown" 
+            data-bs-display="static"
+            aria-expanded="false"
+          >
+            <div class="d-flex align-items-center gap-2 overflow-hidden">
+              <i v-if="activeProject" :class="['ti', activeProject.icon]" :style="{ color: activeProject.color }"></i>
+              <i v-else class="ti ti-layers-intersect text-muted"></i>
+              <span class="text-truncate">{{ activeProject ? activeProject.name : 'All Projects' }}</span>
+            </div>
+          </button>
+          <ul class="dropdown-menu w-100 shadow-sm">
+            <li>
+              <a class="dropdown-item d-flex align-items-center gap-2" href="#" @click.prevent="selectProject(null)">
+                <i class="ti ti-layers-intersect text-muted"></i> All Projects
+              </a>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li v-for="project in projects" :key="project.id">
+              <a class="dropdown-item d-flex align-items-center gap-2" href="#" @click.prevent="selectProject(project.id)">
+                <i :class="['ti', project.icon]" :style="{ color: project.color }"></i>
+                <span class="text-truncate">{{ project.name }}</span>
+              </a>
+            </li>
+            <li v-if="projects.length > 0"><hr class="dropdown-divider"></li>
+            <li>
+              <router-link class="dropdown-item d-flex align-items-center gap-2 text-primary" :to="{ name: 'projects' }">
+                <i class="ti ti-settings"></i> Manage Projects
+              </router-link>
+            </li>
+          </ul>
+        </div>
+      </div>
       <div class="mb-3">
         <input type="text" class="form-control" placeholder="Search"/>
       </div>
@@ -53,6 +127,11 @@ const openTerminalInWindow = async () => {
         <li class="nav-item">
           <router-link class="nav-link pt-3 pb-3" :to="{ name: 'dashboard' }">
             <div class="d-flex"><i class="ti ti-dashboard fs-4"></i> <div class="ps-2">Dashboard</div></div>
+          </router-link>
+        </li>
+        <li class="nav-item">
+          <router-link :class="`nav-link pt-3 pb-3 ` + (isLinkActive('/projects') ? 'active' : '')" :to="{ name: 'projects' }">
+            <div class="d-flex"><i class="ti ti-archive fs-4"></i> <div class="ps-2">Projects</div></div>
           </router-link>
         </li>
         <li class="mt-3">
@@ -120,7 +199,7 @@ const openTerminalInWindow = async () => {
     <RouterView/>
   </div>
 
-  <div v-show="terminalVisible" class="terminal-overlay position-absolute" style="left:320px;right:0;bottom:0;">
+  <div v-if="terminalVisible" class="terminal-overlay position-absolute" style="left:320px;right:0;bottom:0;">
     <CelerixTerminal />
   </div>
 </template>

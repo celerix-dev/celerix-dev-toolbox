@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, watch } from 'vue';
-import { Modal } from 'bootstrap';
+import { schemaService } from '@/services/schema';
+import { storageService } from '@/services/storage';
+import ConfirmationModal from '@/components/Basic/ConfirmationModal.vue';
+import AlertModal from '@/components/Basic/AlertModal.vue';
 
 interface ProjectUser {
   id: string;
@@ -21,8 +24,9 @@ interface Project {
 }
 
 const projects = ref<Project[]>([]);
+const isInitialized = ref(false);
 const searchQuery = ref('');
-const isEditing = ref(false);
+const isEditingProject = ref(false);
 const currentProject = ref<Project>({
   id: '',
   name: '',
@@ -45,19 +49,56 @@ const availableColors = [
   '#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#6366f1', '#8b5cf6', '#ec4899', '#64748b'
 ];
 
-onMounted(() => {
-  const saved = localStorage.getItem('celerix-projects');
-  if (saved) {
-    try {
-      projects.value = JSON.parse(saved);
-    } catch (e) {
-      console.error('Failed to load projects', e);
+// Modals state
+const showAlert = ref(false);
+const alertTitle = ref('');
+const alertMessage = ref('');
+const alertVariant = ref<'primary' | 'danger' | 'warning' | 'info' | 'success'>('primary');
+
+const showConfirmDelete = ref(false);
+const projectToDelete = ref<string | null>(null);
+
+const triggerAlert = (title: string, message: string, variant: 'primary' | 'danger' | 'warning' | 'info' | 'success' = 'primary') => {
+  alertTitle.value = title;
+  alertMessage.value = message;
+  alertVariant.value = variant;
+  showAlert.value = true;
+};
+
+onMounted(async () => {
+  try {
+    console.log('ProjectsView: Starting initialization...');
+    const parsed = await storageService.load<any>('PROJECTS');
+    if (parsed) {
+      const validation = schemaService.validateProjects(parsed);
+      
+      if (validation.valid) {
+        projects.value = parsed.projects;
+      } else {
+        // Migration/Fallback: if it's still an array, it's the old format
+        if (Array.isArray(parsed)) {
+          projects.value = parsed;
+          console.log('Migrated projects to versioned format');
+        } else {
+          console.error('Projects data validation failed', validation.errors);
+          if (parsed.projects) projects.value = parsed.projects;
+        }
+      }
+    } else {
+      console.log('No projects data found.');
     }
+    isInitialized.value = true;
+    console.log('ProjectsView: Initialization successful.');
+  } catch (e) {
+    console.error('Failed to load projects', e);
+    triggerAlert('Load Error', 'Failed to load projects. Auto-save disabled to prevent data loss.', 'danger');
   }
 });
 
-watch(projects, (newProjects) => {
-  localStorage.setItem('celerix-projects', JSON.stringify(newProjects));
+watch(projects, async (newProjects) => {
+  if (!isInitialized.value) return;
+  const versioned = schemaService.getVersionedProjects(newProjects);
+  await storageService.save('PROJECTS', versioned);
 }, { deep: true });
 
 const filteredProjects = computed(() => {
@@ -72,10 +113,14 @@ const filteredProjects = computed(() => {
 
 const openProjectModal = (project?: Project) => {
   if (project) {
-    isEditing.value = true;
-    currentProject.value = { ...project };
+    isEditingProject.value = true;
+    // Deep copy to avoid direct mutation and ensure reactivity
+    currentProject.value = JSON.parse(JSON.stringify(project));
+    if (!currentProject.value.users) {
+      currentProject.value.users = [];
+    }
   } else {
-    isEditing.value = false;
+    isEditingProject.value = false;
     currentProject.value = {
       id: crypto.randomUUID(),
       name: '',
@@ -87,12 +132,10 @@ const openProjectModal = (project?: Project) => {
       users: []
     };
   }
-  const modal = new Modal(document.getElementById('projectModal') as HTMLElement);
-  modal.show();
 };
 
 const saveProject = () => {
-  if (isEditing.value) {
+  if (isEditingProject.value) {
     const index = projects.value.findIndex(p => p.id === currentProject.value.id);
     if (index !== -1) {
       projects.value[index] = { ...currentProject.value };
@@ -100,31 +143,43 @@ const saveProject = () => {
   } else {
     projects.value.push({ ...currentProject.value });
   }
-  const modalElement = document.getElementById('projectModal');
-  const modal = Modal.getInstance(modalElement as HTMLElement);
-  modal?.hide();
+  // No need for manual save here as there's a deep watch on projects
 };
 
 const deleteProject = (id: string) => {
-  if (confirm('Are you sure you want to delete this project?')) {
-    projects.value = projects.value.filter(p => p.id !== id);
-    const modalElement = document.getElementById('projectModal');
-    const modal = Modal.getInstance(modalElement as HTMLElement);
-    modal?.hide();
+  projectToDelete.value = id;
+  showConfirmDelete.value = true;
+};
+
+const handleConfirmDelete = () => {
+  if (projectToDelete.value) {
+    projects.value = projects.value.filter(p => p.id !== projectToDelete.value);
+    projectToDelete.value = null;
   }
+  showConfirmDelete.value = false;
+};
+
+const openAddProjectModal = () => {
+  openProjectModal();
 };
 
 const addUser = () => {
-  currentProject.value.users.push({
-    id: crypto.randomUUID(),
-    firstName: '',
-    lastName: '',
-    nickname: ''
-  });
+  const users = currentProject.value.users || [];
+  currentProject.value.users = [
+    ...users,
+    {
+      id: crypto.randomUUID(),
+      firstName: '',
+      lastName: '',
+      nickname: ''
+    }
+  ];
 };
 
 const removeUser = (index: number) => {
-  currentProject.value.users.splice(index, 1);
+  const users = [...currentProject.value.users];
+  users.splice(index, 1);
+  currentProject.value.users = users;
 };
 
 </script>
@@ -141,8 +196,8 @@ const removeUser = (index: number) => {
 
   <teleport to="#page-context">
     <div class="d-flex align-items-center gap-2" style="width: 300px;">
-      <div class="search-input-group input-group input-group-sm">
-        <span class="input-group-text bg-transparent border-end-0">
+      <div class="input-group input-group-sm">
+        <span class="input-group-text bg-transparent border-end-0 text-muted">
           <i class="ti ti-search"></i>
         </span>
         <input 
@@ -174,23 +229,33 @@ const removeUser = (index: number) => {
       <div v-for="project in filteredProjects" :key="project.id" class="col-12 col-md-6 col-lg-4 col-xl-3">
         <div 
           class="project-card card h-100 border-0 shadow-sm position-relative overflow-hidden" 
-          @click="openProjectModal(project)"
           :style="{ borderTop: `4px solid ${project.color}` }"
         >
           <div class="card-body d-flex flex-column">
-            <div class="d-flex align-items-center gap-3 mb-3">
-              <div 
-                class="project-icon-wrapper d-flex align-items-center justify-content-center rounded"
-                :style="{ backgroundColor: project.color + '20', color: project.color }"
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <div class="d-flex align-items-center gap-3 overflow-hidden">
+                <div 
+                  class="project-icon-wrapper d-flex align-items-center justify-content-center rounded"
+                  :style="{ backgroundColor: project.color + '20', color: project.color }"
+                >
+                  <i :class="['ti', project.icon, 'fs-3']"></i>
+                </div>
+                <div class="overflow-hidden">
+                  <h6 class="card-title mb-0 text-truncate">{{ project.name }}</h6>
+                  <span class="badge" :style="{ backgroundColor: project.color + '20', color: project.color }">
+                    #{{ project.tag }}
+                  </span>
+                </div>
+              </div>
+              <button 
+                class="btn btn-sm btn-link p-0 text-muted shadow-none border-0 no-focus-ring" 
+                @mousedown="openProjectModal(project)"
+                @click="openProjectModal(project)"
+                data-bs-toggle="modal"
+                data-bs-target="#projectModal"
               >
-                <i :class="['ti', project.icon, 'fs-3']"></i>
-              </div>
-              <div class="overflow-hidden">
-                <h6 class="card-title mb-0 text-truncate">{{ project.name }}</h6>
-                <span class="badge" :style="{ backgroundColor: project.color + '20', color: project.color }">
-                  #{{ project.tag }}
-                </span>
-              </div>
+                <i class="ti ti-pencil fs-5"></i>
+              </button>
             </div>
             <p class="card-text text-muted small flex-grow-1">
               {{ project.description || 'No description provided.' }}
@@ -210,7 +275,10 @@ const removeUser = (index: number) => {
         <div 
           class="add-project-card card h-100 border-0 shadow-sm d-flex flex-column justify-content-center align-items-center text-muted"
           style="min-height: 200px; cursor: pointer"
-          @click="openProjectModal()"
+          @mousedown="openAddProjectModal"
+          @click="openAddProjectModal"
+          data-bs-toggle="modal"
+          data-bs-target="#projectModal"
         >
           <i class="ti ti-plus fs-1 mb-2"></i>
           <span>Add Project</span>
@@ -228,12 +296,30 @@ const removeUser = (index: number) => {
     </div>
   </div>
 
+  <ConfirmationModal
+    :show="showConfirmDelete"
+    title="Delete Project"
+    message="Are you sure you want to delete this project? This action cannot be undone."
+    confirm-text="Delete Project"
+    variant="danger"
+    @close="showConfirmDelete = false"
+    @confirm="handleConfirmDelete"
+  />
+
+  <AlertModal
+    :show="showAlert"
+    :title="alertTitle"
+    :message="alertMessage"
+    :variant="alertVariant"
+    @close="showAlert = false"
+  />
+
   <!-- Project Modal -->
   <div class="modal fade" id="projectModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
         <div class="modal-header">
-          <h5 class="modal-title">{{ isEditing ? 'Edit Project' : 'New Project' }}</h5>
+          <h5 class="modal-title">{{ isEditingProject ? 'Edit Project' : 'New Project' }}</h5>
           <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
@@ -317,14 +403,14 @@ const removeUser = (index: number) => {
         </div>
         <div class="modal-footer justify-content-between">
           <div>
-            <button v-if="isEditing" type="button" class="btn btn-outline-danger" @click="deleteProject(currentProject.id)">
+            <button v-if="isEditingProject" type="button" class="btn btn-outline-danger" @click="deleteProject(currentProject.id)" data-bs-dismiss="modal">
               <i class="ti ti-trash"></i>
             </button>
           </div>
           <div class="d-flex gap-2">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-            <button type="button" class="btn btn-primary" @click="saveProject" :disabled="!currentProject.name || !currentProject.tag">
-              {{ isEditing ? 'Update Project' : 'Create Project' }}
+            <button type="button" class="btn btn-primary" @click="saveProject" :disabled="!currentProject.name || !currentProject.tag" data-bs-dismiss="modal">
+              {{ isEditingProject ? 'Update Project' : 'Create Project' }}
             </button>
           </div>
         </div>
@@ -335,7 +421,6 @@ const removeUser = (index: number) => {
 
 <style scoped>
 .project-card {
-  cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -375,20 +460,18 @@ const removeUser = (index: number) => {
   font-size: 0.75rem;
 }
 
-.search-input-group {
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-  border: 1px solid var(--bs-border-color);
-  border-radius: var(--bs-border-radius-sm);
+.no-focus-ring:focus {
+  outline: none !important;
+  box-shadow: none !important;
 }
 
-.search-input-group:focus-within {
+.input-group:focus-within {
+  box-shadow: none;
+}
+
+.input-group:focus-within .input-group-text,
+.input-group:focus-within .form-control {
   border-color: #86b7fe;
-  outline: 0;
-}
-
-.search-input-group .input-group-text,
-.search-input-group .form-control {
-  border: none;
 }
 .border-dashed {
   border-style: dashed !important;

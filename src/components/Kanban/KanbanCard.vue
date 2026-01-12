@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 
 interface ProjectUser {
   id: string;
@@ -27,6 +27,7 @@ interface KanbanCard {
   dueDate?: string;
   createdAt: number;
   assignee?: string;
+  checklist?: { id: string; text: string; completed: boolean }[];
 }
 
 const props = defineProps<{
@@ -69,27 +70,29 @@ const formatDate = (dateStr: string) => {
   return new Date(dateStr).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 };
 
+const checklistProgress = computed(() => {
+  if (!props.card.checklist || props.card.checklist.length === 0) return null;
+  const total = props.card.checklist.length;
+  const completed = props.card.checklist.filter(item => item.completed).length;
+  return {
+    total,
+    completed,
+    percentage: Math.round((completed / total) * 100)
+  };
+});
+
 const updateColor = (color: string) => {
   emit('update', { ...props.card, color });
 };
 
-const handleCardClick = (event: MouseEvent) => {
-  // Don't open edit modal if we clicked on the dropdown or its items
-  const target = event.target as HTMLElement;
-  if (target.closest('.dropdown')) {
-    return;
-  }
-  emit('edit', props.card);
-};
 </script>
 
 <template>
   <div class="kanban-card">
     <div 
-      :class="['card', `bg-${card.color}-subtle`, 'drag-handle']"
-      @click="handleCardClick"
+      :class="['card', `bg-${card.color}-subtle`]"
     >
-      <div class="card-body p-2 d-flex flex-column h-100">
+      <div class="card-body p-2 d-flex flex-column h-100 drag-handle">
         <div class="d-flex justify-content-between align-items-start">
           <h6 class="card-title mb-1 text-truncate pe-4" :title="card.title">{{ card.title }}</h6>
           <div class="dropdown">
@@ -98,14 +101,13 @@ const handleCardClick = (event: MouseEvent) => {
               type="button"
               data-bs-toggle="dropdown" 
               data-bs-display="static"
-              data-bs-auto-close="outside"
               aria-expanded="false"
               @mousedown.stop
             >
               <i class="ti ti-dots-vertical"></i>
             </button>
             <ul class="dropdown-menu dropdown-menu-end shadow-sm">
-              <li><a class="dropdown-item" href="#" @click.prevent="emit('edit', card)"><i class="ti ti-edit"></i> Edit Card</a></li>
+              <li><a class="dropdown-item" href="#" @click.prevent="emit('edit', card)" data-bs-toggle="modal" data-bs-target="#cardEditModal" data-bs-dismiss="dropdown"><i class="ti ti-edit"></i> Edit Card</a></li>
               <li><h6 class="dropdown-header">Card Color</h6></li>
               <li class="px-2 d-flex flex-wrap gap-1 mb-2" style="max-width: 150px;">
                 <div 
@@ -116,7 +118,7 @@ const handleCardClick = (event: MouseEvent) => {
                 ></div>
               </li>
               <li><hr class="dropdown-divider"></li>
-              <li><a class="dropdown-item text-danger" href="#" @click.prevent="emit('remove', columnId, card.id)"><i class="ti ti-trash"></i> Remove Card</a></li>
+              <li><a class="dropdown-item text-danger" href="#" @click.prevent="emit('remove', columnId, card.id)" data-bs-dismiss="dropdown"><i class="ti ti-trash"></i> Remove Card</a></li>
             </ul>
           </div>
         </div>
@@ -140,13 +142,32 @@ const handleCardClick = (event: MouseEvent) => {
             <i class="ti ti-calendar-event me-1"></i>
             {{ formatDate(card.dueDate) }}
           </span>
+
+          <!-- Checklist Progress -->
+          <span v-if="checklistProgress" class="badge bg-light-subtle text-muted" :title="`Checklist: ${checklistProgress.completed}/${checklistProgress.total}`">
+            <i class="ti ti-checkbox me-1"></i>
+            {{ checklistProgress.completed }}/{{ checklistProgress.total }}
+          </span>
+        </div>
+
+        <div v-if="checklistProgress" class="mt-2">
+          <div class="progress" style="height: 4px;">
+            <div 
+              class="progress-bar bg-success" 
+              role="progressbar" 
+              :style="{ width: `${checklistProgress.percentage}%` }" 
+              :aria-valuenow="checklistProgress.percentage" 
+              aria-valuemin="0" 
+              aria-valuemax="100"
+            ></div>
+          </div>
         </div>
 
         <div class="mt-2 d-flex justify-content-between align-items-center">
            <div class="text-muted smaller opacity-50">
              <i class="ti ti-user me-1"></i> {{ card.assignee || 'Unassigned' }}
            </div>
-           <button class="btn btn-xs btn-outline-secondary opacity-50" @click.stop="emit('edit', card)" @mousedown.stop>
+           <button class="btn btn-xs btn-outline-secondary opacity-50" @click="emit('edit', card)" @mousedown.stop data-bs-toggle="modal" data-bs-target="#cardEditModal">
              <i class="ti ti-pencil"></i>
            </button>
         </div>

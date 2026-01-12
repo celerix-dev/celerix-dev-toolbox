@@ -4,11 +4,31 @@ import ClockWidget from "@/components/Widgets/ClockWidget.vue";
 import CountdownWidget from "@/components/Widgets/CountdownWidget.vue";
 import AddWidgetModal from "@/components/Widgets/AddWidgetModal.vue";
 import {colorScheme} from "@/services/color-scheme.ts";
-import {onMounted, onBeforeUnmount, ref, watch} from "vue";
+import {onMounted, onBeforeUnmount, ref, watch, computed} from "vue";
+import AlertModal from '@/components/Basic/AlertModal.vue';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 import draggable from "vuedraggable";
 import { eventBus } from "@/services/events";
+import { storageService } from "@/services/storage";
+import { useUserStore } from "@/stores/user";
+
+const userStore = useUserStore();
+const projects = ref<any[]>([]);
+
+const loadProjects = async () => {
+  try {
+    const data = await storageService.load<any>('PROJECTS');
+    if (data && data.projects) projects.value = data.projects;
+    else if (Array.isArray(data)) projects.value = data;
+  } catch (e) {
+    console.error('Dashboard: Failed to load projects', e);
+  }
+};
+
+const activeProject = computed(() => {
+  return projects.value.find(p => p.id === userStore.activeProjectId) || null;
+});
 
 interface Widget {
   id: string;
@@ -29,42 +49,68 @@ interface Widget {
 }
 
 const widgets = ref<Widget[]>([]);
+const isInitialized = ref(false);
 
-const loadWidgets = () => {
-  const saved = localStorage.getItem('celerix-dashboard-widgets');
-  if (saved) {
-    try {
-      widgets.value = JSON.parse(saved);
-    } catch (e) {
-      console.error('Failed to load widgets', e);
+// Alert Modal state
+const showAlert = ref(false);
+const alertTitle = ref('');
+const alertMessage = ref('');
+
+const triggerAlert = (title: string, message: string) => {
+  alertTitle.value = title;
+  alertMessage.value = message;
+  showAlert.value = true;
+};
+
+const loadWidgets = async () => {
+  try {
+    const saved = await storageService.load<Widget[]>('WIDGETS');
+    if (saved) {
+      widgets.value = saved;
     }
-  }
 
-  // Ensure clock widget exists if list is empty
-  if (widgets.value.length === 0) {
-    widgets.value.push({
-      id: 'default-clock',
-      type: 'clock',
-      label: 'Welcome',
-      isConfigured: true,
-      clockOptions: {
-        showDate: false,
-        showDigital: true,
-        show24h: false
-      }
-    });
+    // Ensure clock widget exists if list is empty
+    if (widgets.value.length === 0) {
+      widgets.value.push({
+        id: 'default-clock',
+        type: 'clock',
+        label: 'Welcome',
+        isConfigured: true,
+        clockOptions: {
+          showDate: false,
+          showDigital: true,
+          show24h: false
+        }
+      });
+    }
+  } catch (e) {
+    console.error('Error loading widgets', e);
+    throw e;
   }
 };
 
-const saveWidgets = () => {
-  localStorage.setItem('celerix-dashboard-widgets', JSON.stringify(widgets.value));
+const saveWidgets = async () => {
+  if (!isInitialized.value) return;
+  await storageService.save('WIDGETS', widgets.value);
 };
 
 watch(widgets, saveWidgets, { deep: true });
 
-onMounted(() => {
+onMounted(async () => {
   colorScheme.updateTheme();
-  loadWidgets();
+  console.log('Dashboard: Starting initialization...');
+  try {
+    await Promise.all([
+      loadWidgets(),
+      loadProjects(),
+      userStore.loadUser()
+    ]);
+    isInitialized.value = true;
+    console.log('Dashboard: Initialization successful.');
+  } catch (e: any) {
+    console.error('Dashboard: Failed to initialize', e);
+    triggerAlert('Load Error', 'Failed to load dashboard widgets. Auto-save disabled to prevent data loss. Error: ' + e.message);
+  }
   eventBus.on('reset-dashboard', handleReset);
 });
 
@@ -72,10 +118,12 @@ onBeforeUnmount(() => {
   eventBus.off('reset-dashboard', handleReset);
 });
 
-const handleReset = () => {
-  localStorage.removeItem('celerix-dashboard-widgets');
+const handleReset = async () => {
+  // We can't easily "remove" from storage service yet without a delete method,
+  // but clearing the array and saving accomplishes the same for the UI.
   widgets.value = [];
-  loadWidgets();
+  await saveWidgets();
+  await loadWidgets();
 };
 
 const addWidget = (type: string) => {
@@ -159,24 +207,16 @@ const importWidgets = async () => {
 </script>
 
 <template>
-
-  <div class="dropdown">
-    <button class="btn btn-primary dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-      Button
-    </button>
-    <ul class="dropdown-menu">
-      <li><h6 class="dropdown-header">Header</h6></li>
-      <li><a href="#" class="dropdown-item active" aria-current="true">Dropdown link 1</a></li>
-      <li><a href="#" class="dropdown-item">Dropdown link 2</a></li>
-      <li><a href="#" class="dropdown-item">Dropdown link 3</a></li>
-      <li><hr class="dropdown-divider"></li>
-      <li><a class="dropdown-item disabled">Dropdown link 4</a></li>
-    </ul>
-  </div>
-  
   <teleport to="#breadcrumbs">
     <div class="d-flex align-items-center justify-content-between w-100">
-      <div><i class="ti ti-dashboard"></i> <strong>Dashboard</strong></div>
+      <div class="d-flex align-items-center gap-2">
+        <i class="ti ti-dashboard"></i> 
+        <strong>Dashboard</strong>
+        <span v-if="activeProject" class="ms-2 badge" :style="{ backgroundColor: activeProject.color + '20', color: activeProject.color }">
+          <i :class="['ti', activeProject.icon, 'me-1']"></i>
+          {{ activeProject.name }}
+        </span>
+      </div>
     </div>
   </teleport>
 
@@ -221,7 +261,7 @@ const importWidgets = async () => {
           <div v-else class="card border-danger h-100 widget-card">
             <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
               <span><i class="ti ti-alert-triangle"></i> Unknown Widget</span>
-              <button class="btn btn-sm btn-link text-white p-0" @click="removeWidget(widget.id)">
+              <button class="btn btn-sm text-white p-0" @click="removeWidget(widget.id)">
                 <i class="ti ti-trash"></i>
               </button>
             </div>
@@ -246,6 +286,14 @@ const importWidgets = async () => {
       </template>
     </draggable>
   </div>
+
+  <AlertModal
+    :show="showAlert"
+    :title="alertTitle"
+    :message="alertMessage"
+    variant="danger"
+    @close="showAlert = false"
+  />
 
   <AddWidgetModal @add="addWidget" />
 

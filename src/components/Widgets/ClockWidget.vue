@@ -57,12 +57,12 @@ const enterEditMode = () => {
         {{ widget.isConfigured ? (widget.label || 'Clock') : 'Configure Clock' }}
       </span>
       <div class="dropdown">
-        <button class="btn btn-sm btn-link p-0 dropdown-toggle no-caret" data-bs-toggle="dropdown">
+        <button class="btn btn-sm p-0 dropdown-toggle no-caret" data-bs-toggle="dropdown">
           <i class="ti ti-dots-vertical"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
-          <li><a class="dropdown-item" href="#" @click.prevent="enterEditMode"><i class="ti ti-edit"></i> Edit</a></li>
-          <li><a class="dropdown-item text-danger" href="#" @click.prevent="$emit('remove', widget.id)"><i class="ti ti-trash"></i> Remove</a></li>
+          <li><a class="dropdown-item" href="#" @click.prevent="enterEditMode" data-bs-dismiss="dropdown"><i class="ti ti-edit"></i> Edit</a></li>
+          <li><a class="dropdown-item text-danger" href="#" @click.prevent="$emit('remove', widget.id)" data-bs-dismiss="dropdown"><i class="ti ti-trash"></i> Remove</a></li>
         </ul>
       </div>
     </div>
