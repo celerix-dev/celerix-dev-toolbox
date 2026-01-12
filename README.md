@@ -75,11 +75,11 @@ To install the `.deb` or `.rpm`package and ensure all dependencies are correctly
 
 Debian/Ubuntu:
 ```shell
-sudo apt install ./Celerix_0.1.6_amd64.deb
+sudo apt install ./Celerix_0.1.8_amd64.deb
 ``` 
 Fedora/RHEL/OpenSUSE:
 ```shell
-sudo dnf install ./Celerix-0.1.6-1.x86_64.rpm
+sudo dnf install ./Celerix-0.1.8-1.x86_64.rpm
 ```
 
 ---
