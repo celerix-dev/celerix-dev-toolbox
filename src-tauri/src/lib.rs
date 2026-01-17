@@ -45,6 +45,8 @@ pub fn run() {
             utils::generate_uuid,
             utils::generate_bulk_uuid,
             utils::decode_jwt,
+            utils::store_get,
+            utils::store_set,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

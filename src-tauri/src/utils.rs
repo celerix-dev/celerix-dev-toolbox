@@ -4,6 +4,50 @@ use base64::{Engine as _, engine::general_purpose};
 use tauri::WebviewWindow;
 use xcap::Window;
 use std::io::Cursor;
+use std::sync::Arc;
+use celerix_store::{CelerixStore, sdk};
+use tauri::Manager;
+use tokio::sync::OnceCell;
+
+static STORE: OnceCell<Arc<dyn CelerixStore>> = OnceCell::const_new();
+
+async fn get_store(app_handle: tauri::AppHandle) -> Result<Arc<dyn CelerixStore>, String> {
+    if let Some(store) = STORE.get() {
+        return Ok(store.clone());
+    }
+
+    let data_dir = app_handle.path().app_data_dir()
+        .map_err(|e| e.to_string())?
+        .join("data");
+    
+    let store = sdk::new(data_dir.to_str().ok_or("Invalid path")?)
+        .await
+        .map_err(|e| e.to_string())?;
+    
+    // Ensure "default" persona exists for our single-user toolbox context
+    let _ = store.set("default", "toolbox", "_init", serde_json::json!(true)).await;
+    
+    let _ = STORE.set(store.clone());
+    Ok(store)
+}
+
+#[tauri::command]
+pub async fn store_get(app_handle: tauri::AppHandle, key: String) -> Result<Option<serde_json::Value>, String> {
+    let store = get_store(app_handle).await?;
+    match store.get("default", "toolbox", &key).await {
+        Ok(val) => Ok(Some(val)),
+        Err(celerix_store::Error::KeyNotFound) | 
+        Err(celerix_store::Error::AppNotFound) | 
+        Err(celerix_store::Error::PersonaNotFound) => Ok(None),
+        Err(e) => Err(e.to_string()),
+    }
+}
+
+#[tauri::command]
+pub async fn store_set(app_handle: tauri::AppHandle, key: String, value: serde_json::Value) -> Result<(), String> {
+    let store = get_store(app_handle).await?;
+    store.set("default", "toolbox", &key, value).await.map_err(|e| e.to_string())
+}
 
 #[derive(Serialize, Deserialize)]
 pub struct JwtParts {
