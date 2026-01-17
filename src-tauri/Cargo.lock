@@ -540,8 +540,9 @@ dependencies = [
 
 [[package]]
 name = "celerix-store"
-version = "0.1.0"
-source = "git+https://github.com/celerix-dev/celerix-store-rust.git?tag=v0.1.0#68f1e403cc3fc002fd175a9b4592312073076f37"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f212b0fbd3f37c84d997b2a236d5c9d26f1ebd0dac8c6ddbc09780a01bdf8577"
 dependencies = [
  "aes-gcm",
  "anyhow",
