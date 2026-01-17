@@ -116,16 +116,26 @@ const startShell = async (): Promise<void> => {
     if (isUnmounting) return;
 
     const isWindows = window.navigator.userAgent.includes('Windows');
-    const shell = isWindows ? 'powershell.exe' : '/bin/zsh';
+    const isLinux = window.navigator.userAgent.includes('Linux');
+    
+    let shell = '/bin/zsh'; // Default for macOS
+    let args: string[] = [];
+
+    if (isWindows) {
+      shell = 'powershell.exe';
+      args = ['-NoLogo'];
+    } else if (isLinux) {
+      shell = '/bin/bash';
+    }
 
     // Ensure we have at least SOME dimensions
     const cols = term.cols || 80;
     const rows = term.rows || 24;
 
     // Spawn the process
-    console.log('Terminal: Spawning shell...', shell, { cols, rows });
+    console.log('Terminal: Spawning shell...', shell, args, { cols, rows });
     try {
-      pty = spawn(shell, [], {
+      pty = spawn(shell, args, {
         cols,
         rows,
         env: {
