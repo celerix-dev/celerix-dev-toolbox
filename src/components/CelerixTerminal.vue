@@ -117,13 +117,13 @@ const startShell = async (): Promise<void> => {
 
     const isWindows = window.navigator.userAgent.includes('Windows');
     const isLinux = window.navigator.userAgent.includes('Linux');
-    
+
     let shell = '/bin/zsh'; // Default for macOS
     let args: string[] = [];
 
     if (isWindows) {
-      shell = 'powershell.exe';
-      args = ['-NoLogo'];
+      shell = 'cmd.exe';
+      args = ['/C', 'start', 'powershell.exe', '-NoLogo'];
     } else if (isLinux) {
       shell = '/bin/bash';
     }

@@ -25,6 +25,13 @@
         }
       ]
     },
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        { "name": "powershell.exe", "args": true },
+        { "name": "cmd.exe", "args": true }
+      ]
+    },
     "pty:default",
     "process:allow-restart",
     "screenshots:default",
