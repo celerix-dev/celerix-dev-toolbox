@@ -61,7 +61,7 @@ jobs:
     if: |
       github.event_name == 'push' || 
       github.event.inputs.platform_filter == 'all' || 
-      github.event.inputs.platform_filter == matrix.arch
+      github.event.inputs.platform_filter == matrix.arch_name
 
     steps:
       - uses: actions/checkout@v4
