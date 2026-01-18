@@ -3,7 +3,21 @@ on:
   push:
     tags:
       - 'v*'
-
+  workflow_dispatch:
+    inputs:
+      platform_filter:
+        description: 'Target platform to build'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - macos-arm64
+          - macos-intel
+          - linux-x64
+          - linux-arm64
+          - windows-x64
+          - windows-arm64
 jobs:
   release:
     permissions:
@@ -43,6 +57,12 @@ jobs:
             arch_name: 'windows-arm'
 
     runs-on: ${{ matrix.platform }}
+
+    if: |
+      github.event_name == 'push' || 
+      github.event.inputs.platform_filter == 'all' || 
+      github.event.inputs.platform_filter == matrix.arch
+
     steps:
       - uses: actions/checkout@v4
 
@@ -68,7 +88,8 @@ jobs:
             libsoup-3.0-dev \
             libjavascriptcoregtk-4.1-dev \
             librsvg2-dev \
-            libayatana-appindicator3-dev
+            libayatana-appindicator3-dev \
+            xdg-utils
 
       - name: Install Frontend Dependencies
         run: npm install
@@ -82,4 +103,4 @@ jobs:
           releaseName: 'Celerix ${{ github.ref_name }}'
           releaseDraft: true
           args: ${{ matrix.args }}
-          assetNamePattern: '[name]_${{ github.ref_name }}_${{ matrix.arch }}[ext]'
+          assetNamePattern: '[name]_${{ github.ref_name }}_${{ matrix.arch_name }}[ext]'
