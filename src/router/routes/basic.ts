@@ -6,9 +6,6 @@ import Dashboard from "@/views/Dashboard.vue";
 import UUIDView from "@/views/UUIDView.vue";
 import JWTView from "@/views/JWTView.vue";
 
-import KanbanView from "@/views/KanbanView.vue";
-import Terminal from "@/views/Terminal.vue";
-import Projects from "@/views/Projects.vue";
 import DataViewer from "@/views/DataViewer.vue";
 import ProfileView from "@/views/ProfileView.vue";
 import SettingsView from "@/views/SettingsView.vue";
@@ -24,11 +21,6 @@ export const basicRoutes: RouteRecordRaw[] = [
                 path: '',
                 name: 'dashboard',
                 component: Dashboard
-            },
-            {
-                path: '/kanban',
-                name: 'kanban-index',
-                component: KanbanView
             },
             {
                 path: 'base64',
@@ -61,20 +53,10 @@ export const basicRoutes: RouteRecordRaw[] = [
                 component: SettingsView
             },
             {
-                path: 'projects',
-                name: 'projects',
-                component: Projects
-            },
-            {
                 path: 'data-viewer',
                 name: 'data-viewer',
                 component: DataViewer
             }
         ]
-    },
-    {
-        path: '/terminal',
-        name: 'terminal',
-        component: Terminal
     }
 ];

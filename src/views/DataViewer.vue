@@ -4,10 +4,7 @@ import { storageService } from '@/services/storage';
 import CodeEditor from '@/components/Basic/CodeEditor.vue';
 
 const dataSources = [
-  { key: 'PROJECTS', label: 'Projects', file: 'projects.json', info: 'Projects categorize work across the app. Kanban cards reference projects by their ID.' },
-  { key: 'KANBAN', label: 'Kanban Board', file: 'kanban.json', info: 'Main Kanban data including columns and cards. Cards may reference Project IDs.' },
   { key: 'TEMPLATES', label: 'Card Templates', file: 'templates.json', info: 'Saved card configurations for reuse.' },
-  { key: 'LOGS', label: 'Activity Logs', file: 'logs.json', info: 'Audit trail for Kanban cards, indexed by Card ID.' },
   { key: 'WIDGETS', label: 'Dashboard Widgets', file: 'widgets.json', info: 'Configuration for clock and countdown widgets.' }
 ];
 
@@ -42,10 +39,9 @@ const processData = (data: any) => {
   }
 
   let items: any[] = [];
-  
+
   // Try to find the main array in versioned envelopes
-  if (data.projects) items = data.projects;
-  else if (data.columns) items = data.columns;
+  if (data.columns) items = data.columns;
   else if (Array.isArray(data)) items = data;
   else if (typeof data === 'object') {
     // For LOGS or single objects, we might need different handling
@@ -58,7 +54,7 @@ const processData = (data: any) => {
   }
 
   flattenedData.value = items;
-  
+
   // Extract columns from the first item
   if (items.length > 0) {
     columns.value = Object.keys(items[0]).filter(key => typeof items[0][key] !== 'object' || items[0][key] === null);
@@ -114,8 +110,8 @@ const viewerModalDataJSON = computed(() => {
                 <div>
                     <h6 class="alert-heading mb-1">System Congestion Detected</h6>
                     <p class="mb-0 small">
-                        The application is experiencing delays communicating with the backend (IPC Bridge). 
-                        This usually happens after rapid reloads with an active terminal. 
+                        The application is experiencing delays communicating with the backend (IPC Bridge).
+                        This usually happens after rapid reloads with an active terminal.
                         <strong>Please restart the application if data fails to appear.</strong>
                     </p>
                 </div>
@@ -162,8 +158,8 @@ const viewerModalDataJSON = computed(() => {
                 {{ item[col] }}
               </td>
               <td>
-                <button 
-                  class="btn btn-sm btn-outline-secondary" 
+                <button
+                  class="btn btn-sm btn-outline-secondary"
                   @click="openViewerModal(item)"
                   data-bs-toggle="modal"
                   data-bs-target="#jsonViewerModal"

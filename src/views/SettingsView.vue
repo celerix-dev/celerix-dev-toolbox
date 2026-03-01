@@ -30,13 +30,13 @@ const handleThemeChange = (theme: 'auto' | 'light' | 'dark') => {
 
 const exportAllData = async () => {
   try {
-    const dataKeys = ['PROJECTS', 'KANBAN', 'TEMPLATES', 'LOGS', 'WIDGETS', 'USER'];
+    const dataKeys = ['TEMPLATES', 'LOGS', 'WIDGETS', 'USER'];
     const allData: Record<string, any> = {};
-    
+
     for (const key of dataKeys) {
       allData[key] = await storageService.load(key as any);
     }
-    
+
     const filePath = await save({
       filters: [{ name: 'JSON', extensions: ['json'] }],
       defaultPath: `celerix-backup-${new Date().toISOString().split('T')[0]}.json`
@@ -62,18 +62,18 @@ const importAllData = async () => {
     if (selected) {
       const content = await readTextFile(selected as string);
       const imported = JSON.parse(content);
-      
+
       // Basic validation
       if (typeof imported !== 'object' || Array.isArray(imported)) {
         throw new Error('Invalid backup file format.');
       }
-      
+
       for (const [key, data] of Object.entries(imported)) {
-        if (['PROJECTS', 'KANBAN', 'TEMPLATES', 'LOGS', 'WIDGETS', 'USER'].includes(key)) {
+        if (['TEMPLATES', 'LOGS', 'WIDGETS', 'USER'].includes(key)) {
           await storageService.save(key as any, data);
         }
       }
-      
+
       triggerAlert('Import Successful', 'Application data has been imported. Please restart or refresh the application to apply all changes.', 'success');
     }
   } catch (e: any) {
@@ -88,14 +88,12 @@ const resetApplication = async () => {
 
 const handleConfirmReset = async () => {
   try {
-    const dataKeys = ['PROJECTS', 'KANBAN', 'TEMPLATES', 'LOGS', 'WIDGETS', 'USER'];
+    const dataKeys = ['TEMPLATES', 'LOGS', 'WIDGETS', 'USER'];
     for (const key of dataKeys) {
       // In a real app we might want to delete the files, for now we save empty/null
       let defaultValue: any = null;
-      if (key === 'USER') defaultValue = { nickname: 'Celerix Pilot', theme: 'auto', activeProjectId: null };
-      if (key === 'PROJECTS') defaultValue = { version: '1.0.0', projects: [] };
-      if (key === 'KANBAN') defaultValue = { version: '1.0.0', columns: [] };
-      
+      if (key === 'USER') defaultValue = { nickname: 'Celerix Pilot', theme: 'auto' };
+
       await storageService.save(key as any, defaultValue);
     }
     triggerAlert('Application Reset', 'All data has been cleared. The app will now relaunch.', 'warning');
@@ -123,7 +121,7 @@ const handleConfirmReset = async () => {
   <div class="container py-4">
     <div class="row justify-content-center">
       <div class="col-12 col-lg-8">
-        
+
         <!-- Appearance Section -->
         <section class="mb-5">
           <h5 class="mb-3 d-flex align-items-center gap-2">
@@ -167,7 +165,7 @@ const handleConfirmReset = async () => {
               <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                   <h6 class="mb-0">Full Backup</h6>
-                  <small class="text-muted">Export or import all your application data (Projects, Kanban, Widgets, etc.) as a single file.</small>
+                  <small class="text-muted">Export or import all your application data Widgets, etc. as a single file.</small>
                 </div>
                 <div class="d-flex gap-2">
                   <button class="btn btn-secondary btn-sm" @click="importAllData">
@@ -182,7 +180,7 @@ const handleConfirmReset = async () => {
               <div class="d-flex justify-content-between align-items-center mt-4">
                 <div>
                   <h6 class="mb-0 text-danger">Reset Application</h6>
-                  <small class="text-muted">Warning: This will permanently delete all your projects, tasks, and settings.</small>
+                  <small class="text-muted">Warning: This will permanently delete all your data and settings.</small>
                 </div>
                 <button class="btn btn-outline-danger btn-sm" @click="resetApplication">
                   <i class="ti ti-trash me-1"></i> Reset All Data
@@ -207,7 +205,7 @@ const handleConfirmReset = async () => {
                 </div>
               </div>
               <p class="text-muted small">
-                Celerix is a local-first development toolbox designed to streamline your workflow with integrated Kanban, Terminal, and utility tools.
+                Celerix is a local-first development toolbox designed to streamline your workflow with utilities and tools.
               </p>
               <div class="d-flex gap-3">
                 <a href="https://github.com" target="_blank" class="text-decoration-none small d-flex align-items-center gap-1 text-primary">

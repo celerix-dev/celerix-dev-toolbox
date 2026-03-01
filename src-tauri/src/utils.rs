@@ -71,10 +71,10 @@ pub struct JwtParts {
 
 #[tauri::command]
 pub async fn capture_window(window: WebviewWindow) -> Result<String, String> {
-    // 1. Get the current window title to help identify it
+    // Get the current window title to help identify it
     let title = window.title().map_err(|e| e.to_string())?;
 
-    // 2. Get all windows and find our match
+    // Get all windows and find our match
     let windows = Window::all().map_err(|e| e.to_string())?;
 
     // Attempt to find the window by title.
@@ -84,10 +84,10 @@ pub async fn capture_window(window: WebviewWindow) -> Result<String, String> {
         .find(|w| w.title() == title)
         .ok_or_else(|| "Could not find application window for capture".to_string())?;
 
-    // 3. Capture the window
+    // Capture the window
     let image_buffer = x_window.capture_image().map_err(|e| e.to_string())?;
 
-    // 4. Encode to PNG
+    // Encode to PNG
     let mut buffer = Vec::new();
     let mut cursor = Cursor::new(&mut buffer);
     image_buffer

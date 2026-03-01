@@ -54,7 +54,6 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_screenshots::init())
-        .plugin(tauri_plugin_pty::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_dialog::init())

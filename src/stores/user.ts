@@ -4,13 +4,11 @@ import { storageService } from '@/services/storage';
 
 interface UserState {
   nickname: string;
-  activeProjectId: string | null;
   theme: 'auto' | 'light' | 'dark';
 }
 
 export const useUserStore = defineStore('user', () => {
   const nickname = ref('');
-  const activeProjectId = ref<string | null>(null);
   const theme = ref<'auto' | 'light' | 'dark'>('auto');
   const isInitialized = ref(false);
 
@@ -19,7 +17,6 @@ export const useUserStore = defineStore('user', () => {
       const data = await storageService.load<UserState>('USER');
       if (data) {
         nickname.value = data.nickname || '';
-        activeProjectId.value = data.activeProjectId || null;
         theme.value = data.theme || 'auto';
       } else {
         // Default values if none exists
@@ -39,7 +36,6 @@ export const useUserStore = defineStore('user', () => {
     try {
       await storageService.save('USER', {
         nickname: nickname.value,
-        activeProjectId: activeProjectId.value,
         theme: theme.value
       });
     } catch (e) {
@@ -52,11 +48,6 @@ export const useUserStore = defineStore('user', () => {
     await saveUser();
   };
 
-  const setActiveProject = async (projectId: string | null) => {
-    activeProjectId.value = projectId;
-    await saveUser();
-  };
-
   const setTheme = async (newTheme: 'auto' | 'light' | 'dark') => {
     theme.value = newTheme;
     await saveUser();
@@ -66,11 +57,9 @@ export const useUserStore = defineStore('user', () => {
 
   return {
     nickname,
-    activeProjectId,
     isInitialized,
     loadUser,
     setNickname,
-    setActiveProject,
     theme,
     setTheme,
     userDisplayName

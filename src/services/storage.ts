@@ -1,19 +1,11 @@
 import { invoke } from '@tauri-apps/api/core';
 
 const STORAGE_KEYS = {
-  PROJECTS: 'projects.json',
-  KANBAN: 'kanban.json',
-  TEMPLATES: 'templates.json',
-  LOGS: 'logs.json',
   WIDGETS: 'widgets.json',
   USER: 'user.json'
 };
 
 const LEGACY_KEYS = {
-  PROJECTS: 'celerix-projects',
-  KANBAN: 'celerix-kanban-data',
-  TEMPLATES: 'celerix-kanban-templates',
-  LOGS: 'celerix-kanban-logs',
   WIDGETS: 'celerix-dashboard-widgets',
   USER: 'celerix-user-persona'
 };
@@ -38,7 +30,7 @@ export const storageService = {
     try {
       console.log(`Loading ${key} from Celerix Store...`);
       const data = await invoke<T | null>('store_get', { key });
-      
+
       if (data !== null) {
         return data;
       }

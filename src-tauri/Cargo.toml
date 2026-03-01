@@ -28,7 +28,6 @@ tokio = { version = "1", features = ["sync"] }
 tauri-plugin-dialog = "2.4.2"
 tauri-plugin-fs = "2.4.4"
 tauri-plugin-process = "2"
-tauri-plugin-pty = "0.2.0"
 tauri-plugin-screenshots = "2"
 xcap = "0.3.3"
 celerix-store = "0.1.1"

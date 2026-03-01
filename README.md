@@ -22,10 +22,6 @@
 * **No Bloat:** A native desktop experience that stays out of your way (~35MB RAM usage).
 * **Privacy:** No tracking, no cloud-syncing, no accounts required.
 
-<p align="center">
-   <img src="https://raw.githubusercontent.com/celerix-dev/celerix-dev-toolbox/main/public/assets/celerix-dev-toolbox.png" width="600" alt="Celerix Developer Toolbox" />
-</p>
-
 ---
 
 ## ✨ Current Features
@@ -33,8 +29,6 @@
 ### 🧩 Mini Applications
 Focused tools to keep your project on track:
 * **Widget Dashboard:** A customizable space for your daily dev stats.
-* **Kanban Board:** Drag-and-drop task management, stored locally in your toolbox.
-* **Terminal:** A customizable terminal as overlay or windowed with support for multiple tabs.
 
 ### ⚙️ Developer Utilities
 * **UUID Generator:** Fast, offline ID generation.

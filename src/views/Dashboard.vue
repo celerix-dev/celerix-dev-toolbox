@@ -4,7 +4,7 @@ import ClockWidget from "@/components/Widgets/ClockWidget.vue";
 import CountdownWidget from "@/components/Widgets/CountdownWidget.vue";
 import AddWidgetModal from "@/components/Widgets/AddWidgetModal.vue";
 import {colorScheme} from "@/services/color-scheme.ts";
-import {onMounted, onBeforeUnmount, ref, watch, computed} from "vue";
+import {onMounted, onBeforeUnmount, ref, watch} from "vue";
 import AlertModal from '@/components/Basic/AlertModal.vue';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
@@ -14,21 +14,6 @@ import { storageService } from "@/services/storage";
 import { useUserStore } from "@/stores/user";
 
 const userStore = useUserStore();
-const projects = ref<any[]>([]);
-
-const loadProjects = async () => {
-  try {
-    const data = await storageService.load<any>('PROJECTS');
-    if (data && data.projects) projects.value = data.projects;
-    else if (Array.isArray(data)) projects.value = data;
-  } catch (e) {
-    console.error('Dashboard: Failed to load projects', e);
-  }
-};
-
-const activeProject = computed(() => {
-  return projects.value.find(p => p.id === userStore.activeProjectId) || null;
-});
 
 interface Widget {
   id: string;
@@ -102,7 +87,6 @@ onMounted(async () => {
   try {
     await Promise.all([
       loadWidgets(),
-      loadProjects(),
       userStore.loadUser()
     ]);
     isInitialized.value = true;
@@ -192,7 +176,7 @@ const importWidgets = async () => {
     if (selected) {
       const content = await readTextFile(selected);
       const imported = JSON.parse(content);
-      
+
       // Basic validation
       if (Array.isArray(imported)) {
         // We could do more thorough validation here if needed
@@ -210,12 +194,8 @@ const importWidgets = async () => {
   <teleport to="#breadcrumbs">
     <div class="d-flex align-items-center justify-content-between w-100">
       <div class="d-flex align-items-center gap-2">
-        <i class="ti ti-dashboard"></i> 
+        <i class="ti ti-dashboard"></i>
         <strong>Dashboard</strong>
-        <span v-if="activeProject" class="ms-2 badge" :style="{ backgroundColor: activeProject.color + '20', color: activeProject.color }">
-          <i :class="['ti', activeProject.icon, 'me-1']"></i>
-          {{ activeProject.name }}
-        </span>
       </div>
     </div>
   </teleport>
@@ -232,9 +212,9 @@ const importWidgets = async () => {
   </teleport>
 
   <div class="p-2">
-    <draggable 
-      v-model="widgets" 
-      item-key="id" 
+    <draggable
+      v-model="widgets"
+      item-key="id"
       tag="div"
       class="row g-3"
       handle=".card-header"
@@ -246,15 +226,15 @@ const importWidgets = async () => {
     >
       <template #item="{ element: widget }">
         <div class="col-12 col-md-6 col-lg-4 col-xl-3 widget-col">
-          <ClockWidget 
-            v-if="widget.type === 'clock'" 
+          <ClockWidget
+            v-if="widget.type === 'clock'"
             :widget="widget"
             @update="updateWidget"
             @remove="removeWidget"
           />
-          <CountdownWidget 
-            v-else-if="widget.type === 'countdown'" 
-            :widget="widget" 
+          <CountdownWidget
+            v-else-if="widget.type === 'countdown'"
+            :widget="widget"
             @update="updateWidget"
             @remove="removeWidget"
           />
@@ -272,7 +252,7 @@ const importWidgets = async () => {
           </div>
         </div>
       </template>
-      
+
       <template #footer>
         <!-- Add Widget Button -->
         <div class="col-12 col-md-6 col-lg-4 col-xl-3">
