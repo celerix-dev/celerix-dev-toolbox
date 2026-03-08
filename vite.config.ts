@@ -2,11 +2,20 @@ import { fileURLToPath, URL } from 'node:url'
 import {defineConfig} from "vite";
 import vue from "@vitejs/plugin-vue";
 
+import UnoCSS from 'unocss/vite'
+import {celerixPreset} from '@celerix/spectrum/unoPreset'
+
 const host = process.env.TAURI_DEV_HOST;
 
 // https://vite.dev/config/
 export default defineConfig(async () => ({
-    plugins: [vue()],
+    plugins: [
+        UnoCSS({
+            // @ts-ignore, during local development celerixPreset's path may throw off an error
+            presets: [celerixPreset()],
+        }),
+        vue()
+    ],
 
     resolve: {
         alias: {

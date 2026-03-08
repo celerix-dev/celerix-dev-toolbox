@@ -15,33 +15,31 @@ const selectWidget = (type: string) => {
 </script>
 
 <template>
-  <div class="modal fade" id="addWidgetModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">Add Widget</h5>
-          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="cx-modal" id="addWidgetModal" data-cx-modal>
+        <div class="cx-modal-dialog">
+            <div class="cx-modal-content">
+                <div class="cx-modal-header">
+                    <h5 class="cx-modal-title">Add Widget</h5>
+                    <button type="button" class="cx-button small ti ti-x" data-cx-dismiss="modal"></button>
+                </div>
+                <div class="cx-modal-body">
+                    <div class="cx-list-group d-flex-col">
+                        <button
+                            v-for="widget in availableWidgets"
+                            :key="widget.id"
+                            class="cx-list-item"
+                            :disabled="widget.disabled"
+                            @click="selectWidget(widget.id)"
+                            data-cx-dismiss="modal"
+                        >
+                            <i :class="['ti', widget.icon]"></i>
+                            <span>{{ widget.name }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="modal-body">
-          <div class="list-group">
-            <button 
-              v-for="widget in availableWidgets" 
-              :key="widget.id"
-              type="button" 
-              class="list-group-item list-group-item-action d-flex align-items-center gap-3"
-              :disabled="widget.disabled"
-              @click="selectWidget(widget.id)"
-              data-bs-dismiss="modal"
-            >
-              <i :class="['ti', widget.icon, 'fs-4']"></i>
-              <span>{{ widget.name }}</span>
-              <span v-if="widget.disabled" class="badge bg-secondary ms-auto">Coming Soon</span>
-            </button>
-          </div>
-        </div>
-      </div>
     </div>
-  </div>
 </template>
 
 <style scoped>

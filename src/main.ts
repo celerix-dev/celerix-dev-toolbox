@@ -1,11 +1,10 @@
-import 'halfmoon/css/halfmoon.min.css';
-import 'halfmoon/css/cores/halfmoon.modern.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import '@tabler/icons-webfont/dist/tabler-icons.min.css';
-import { createSpectrum } from "celerix-spectrum/vue";
+import { createSpectrum } from "@celerix/spectrum/vue";
+import 'virtual:uno.css';
+import '@celerix/spectrum/css';
+import { initUI } from '@celerix/spectrum/ui';
 import './assets/main.css';
 
-import '@/services/color-scheme.ts';
 import { storageService } from '@/services/storage';
 
 import { createApp } from 'vue';
@@ -19,6 +18,9 @@ const app = createApp(App);
 
 app.use(createSpectrum())
 
+// Initialize Spectrum UI code logic
+initUI();
+
 // Initialize storage before mounting
 console.log('Main: Initializing storage...');
 storageService.init().then(async () => {
@@ -28,12 +30,12 @@ storageService.init().then(async () => {
   // before the new session tries to re-open them.
   const navigationEntry = performance.getEntriesByType('navigation')[0] as PerformanceNavigationTiming;
   const isReload = navigationEntry && navigationEntry.type === 'reload';
-  
-  // In development mode (npm run tauri dev), we might want to avoid relaunching on every reload 
+
+  // In development mode (npm run tauri dev), we might want to avoid relaunching on every reload
   // because it's slow and disrupts the dev experience. However, we must clear resources.
   // If it's dev, we'll try a standard reload first, but if it's the "hard" way, we relaunch.
   const isDev = import.meta.env.DEV;
-  
+
   if (isReload) {
     if (isDev) {
       console.log('Main: Dev reload detected, allowing standard reload to preserve HMR/Dev experience.');
@@ -47,7 +49,7 @@ storageService.init().then(async () => {
           window.stop();
           window.location.href = 'data:text/html,<html><body style="background:#1a1a1a;"></body></html>';
         }
-        
+
         setTimeout(async () => {
           try {
             await relaunch();
@@ -56,7 +58,7 @@ storageService.init().then(async () => {
             window.location.replace('/');
           }
         }, 250);
-        return; 
+        return;
       } catch (e) {
         console.error('Main: Failed to relaunch, falling back to delayed mount', e);
         await new Promise(resolve => setTimeout(resolve, 1500));
@@ -66,7 +68,7 @@ storageService.init().then(async () => {
     // Standard fresh start: short delay to ensure PTY/IPC bridge is ready
     await new Promise(resolve => setTimeout(resolve, 500));
   }
-  
+
   app.use(createPinia());
   app.use(router);
   app.mount('#app');

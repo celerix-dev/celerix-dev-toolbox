@@ -50,14 +50,14 @@ const enterEditMode = () => {
 </script>
 
 <template>
-  <div class="card clock-widget h-100 position-relative widget-card" style="min-width: 300px;">
-    <div class="card-header d-flex justify-content-between align-items-center">
+  <div class="card base cx-h-100 pos-relative">
+    <div class="card-header d-flex justify-between align-center">
       <span>
-        <i class="ti ti-clock"></i> 
+        <i class="ti ti-clock"></i>
         {{ widget.isConfigured ? (widget.label || 'Clock') : 'Configure Clock' }}
       </span>
-      <div class="dropdown">
-        <button class="btn btn-sm p-0 dropdown-toggle no-caret" data-bs-toggle="dropdown">
+      <div class="dropdown" data-cx-dropdown>
+        <button class="cx-button small p-0-important dropdown-toggle no-caret" data-cx-toggle="dropdown">
           <i class="ti ti-dots-vertical"></i>
         </button>
         <ul class="dropdown-menu dropdown-menu-end">
@@ -66,8 +66,8 @@ const enterEditMode = () => {
         </ul>
       </div>
     </div>
-    
-    <div class="card-body d-flex flex-column justify-content-center align-items-center text-center">
+
+    <div class="card-body d-flex d-flex-col justify-center align-center text-center">
       <div v-if="!widget.isConfigured" class="w-100 p-3">
         <div class="mb-2">
           <label class="form-label d-block text-start">Label</label>
@@ -87,13 +87,13 @@ const enterEditMode = () => {
         </div>
         <button class="btn btn-primary btn-sm w-100" @click="save">Save Settings</button>
       </div>
-      
+
       <div v-else class="clock-display">
-        <DonkersClock 
-          :id="widget.id" 
-          :show-date="widget.clockOptions?.showDate" 
-          :show-digital="widget.clockOptions?.showDigital" 
-          :show24h="widget.clockOptions?.show24h" 
+        <DonkersClock
+          :id="widget.id"
+          :show-date="widget.clockOptions?.showDate"
+          :show-digital="widget.clockOptions?.showDigital"
+          :show24h="widget.clockOptions?.show24h"
         />
       </div>
     </div>

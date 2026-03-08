@@ -11,7 +11,7 @@ dev:
 
 # clean
 clean:
-    npm run tauri clean
+    cd src-tauri && cargo clean && cd ..
 
 # build universal macos package
 build-universal:

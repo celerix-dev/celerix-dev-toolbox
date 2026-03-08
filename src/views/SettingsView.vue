@@ -1,13 +1,14 @@
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useUserStore } from '@/stores/user';
+import { ref, watch } from 'vue';
 import { storageService } from '@/services/storage';
 import AlertModal from '@/components/Basic/AlertModal.vue';
 import ConfirmationModal from '@/components/Basic/ConfirmationModal.vue';
 import { save, open } from '@tauri-apps/plugin-dialog';
 import { writeTextFile, readTextFile } from '@tauri-apps/plugin-fs';
 
-const userStore = useUserStore();
+import {useSpectrum, ColorPresets} from "@celerix/spectrum/vue";
+
+const spectrum = useSpectrum();
 
 // UI State
 const showAlert = ref(false);
@@ -25,7 +26,7 @@ const triggerAlert = (title: string, message: string, variant: 'primary' | 'dang
 };
 
 const handleThemeChange = (theme: 'auto' | 'light' | 'dark') => {
-  userStore.setTheme(theme);
+  spectrum.setThemeMode(theme);
 };
 
 const exportAllData = async () => {
@@ -108,81 +109,92 @@ const handleConfirmReset = async () => {
   }
 };
 
+const internalMode = ref(spectrum.mode);
+
+watch(
+    () => spectrum,
+    (newSpectrum) => {
+        internalMode.value = newSpectrum.mode;
+    },
+    { deep: true, immediate: true }
+);
 </script>
 
 <template>
   <teleport to="#breadcrumbs">
-    <div class="d-flex align-items-center gap-2">
+    <div class="d-flex align-center g-2">
       <i class="ti ti-settings"></i>
       <strong>Settings</strong>
     </div>
   </teleport>
 
-  <div class="container py-4">
-    <div class="row justify-content-center">
-      <div class="col-12 col-lg-8">
+  <div class="d-flex py-4 w-full">
+    <div class="flex-dir-row justify-center mx-auto">
+      <div class="">
 
         <!-- Appearance Section -->
         <section class="mb-5">
-          <h5 class="mb-3 d-flex align-items-center gap-2">
-            <i class="ti ti-palette text-primary"></i> Appearance
+          <h5 class="mb-3 d-flex align-center g-2">
+            <i class="ti ti-palette text-primary"></i> Appearance {{ internalMode }}
           </h5>
-          <div class="card border-0 shadow-sm">
+          <div class="card">
             <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center mb-3">
+              <div class="d-flex justify-between align-center mb-3">
                 <div>
                   <h6 class="mb-0">Color Mode</h6>
                   <small class="text-muted">Choose how Celerix looks to you.</small>
                 </div>
-                <div class="btn-group shadow-none" role="group">
-                  <input type="radio" class="btn-check" name="theme-mode" id="theme-auto" autocomplete="off" :checked="userStore.theme === 'auto'" @change="handleThemeChange('auto')">
-                  <label class="btn btn-outline-secondary btn-sm px-3" for="theme-auto">
+                <div class="cx-button-group shadow-none" role="group">
+                  <input type="radio" class="d-none input-check" name="theme-mode" id="theme-auto" autocomplete="off" :checked="internalMode === 'auto'" @change="handleThemeChange('auto')">
+                  <label class="selection-item px-3 cursor-pointer" for="theme-auto">
                     <i class="ti ti-device-desktop me-1"></i> Auto
                   </label>
 
-                  <input type="radio" class="btn-check" name="theme-mode" id="theme-light" autocomplete="off" :checked="userStore.theme === 'light'" @change="handleThemeChange('light')">
-                  <label class="btn btn-outline-secondary btn-sm px-3" for="theme-light">
+                  <input type="radio" class="d-none input-check" name="theme-mode" id="theme-light" autocomplete="off" :checked="internalMode === 'light'" @change="handleThemeChange('light')">
+                  <label class="selection-item px-3 cursor-pointer" for="theme-light">
                     <i class="ti ti-sun me-1"></i> Light
                   </label>
 
-                  <input type="radio" class="btn-check" name="theme-mode" id="theme-dark" autocomplete="off" :checked="userStore.theme === 'dark'" @change="handleThemeChange('dark')">
-                  <label class="btn btn-outline-secondary btn-sm px-3" for="theme-dark">
+                  <input type="radio" class="d-none input-check" name="theme-mode" id="theme-dark" autocomplete="off" :checked="internalMode === 'dark'" @change="handleThemeChange('dark')">
+                  <label class="selection-item px-3 cursor-pointer" for="theme-dark">
                     <i class="ti ti-moon me-1"></i> Dark
                   </label>
                 </div>
               </div>
+
+                <ColorPresets :spectrum="spectrum" />
             </div>
           </div>
         </section>
 
         <!-- Data Management Section -->
         <section class="mb-5">
-          <h5 class="mb-3 d-flex align-items-center gap-2">
+          <h5 class="mb-3 d-flex align-center g-2">
             <i class="ti ti-database text-primary"></i> Data Management
           </h5>
-          <div class="card border-0 shadow-sm mb-3">
+          <div class="card mb-3">
             <div class="card-body">
-              <div class="d-flex justify-content-between align-items-center mb-4">
+              <div class="d-flex justify-between align-center mb-4">
                 <div>
                   <h6 class="mb-0">Full Backup</h6>
                   <small class="text-muted">Export or import all your application data Widgets, etc. as a single file.</small>
                 </div>
-                <div class="d-flex gap-2">
-                  <button class="btn btn-secondary btn-sm" @click="importAllData">
+                <div class="d-flex g-2">
+                  <button class="cx-button" @click="importAllData">
                     <i class="ti ti-download me-1"></i> Import
                   </button>
-                  <button class="btn btn-primary btn-sm" @click="exportAllData">
+                  <button class="cx-button" @click="exportAllData">
                     <i class="ti ti-upload me-1"></i> Export All
                   </button>
                 </div>
               </div>
               <hr class="text-muted opacity-25">
-              <div class="d-flex justify-content-between align-items-center mt-4">
+              <div class="d-flex justify-between align-center mt-4">
                 <div>
                   <h6 class="mb-0 text-danger">Reset Application</h6>
                   <small class="text-muted">Warning: This will permanently delete all your data and settings.</small>
                 </div>
-                <button class="btn btn-outline-danger btn-sm" @click="resetApplication">
+                <button class="cx-button is-danger" @click="resetApplication">
                   <i class="ti ti-trash me-1"></i> Reset All Data
                 </button>
               </div>
@@ -192,12 +204,12 @@ const handleConfirmReset = async () => {
 
         <!-- About Section -->
         <section>
-          <h5 class="mb-3 d-flex align-items-center gap-2">
+          <h5 class="mb-3 d-flex align-center g-2">
             <i class="ti ti-info-circle text-primary"></i> About
           </h5>
-          <div class="card border-0 shadow-sm">
+          <div class="card">
             <div class="card-body">
-              <div class="d-flex align-items-center gap-3 mb-3">
+              <div class="d-flex align-center g-3 mb-3">
                 <img src="/celerix-logo.png" alt="Logo" width="48" height="48" class="rounded shadow-sm">
                 <div>
                   <h6 class="mb-0">Celerix Dev Toolbox</h6>
@@ -207,11 +219,11 @@ const handleConfirmReset = async () => {
               <p class="text-muted small">
                 Celerix is a local-first development toolbox designed to streamline your workflow with utilities and tools.
               </p>
-              <div class="d-flex gap-3">
-                <a href="https://github.com" target="_blank" class="text-decoration-none small d-flex align-items-center gap-1 text-primary">
+              <div class="d-flex g-3">
+                <a href="https://github.com" target="_blank" class="text-decoration-none small d-flex align-center g-1 text-brand">
                   <i class="ti ti-brand-github"></i> GitHub
                 </a>
-                <a href="#" class="text-decoration-none small d-flex align-items-center gap-1 text-primary">
+                <a href="#" class="text-decoration-none small d-flex align-center g-1 text-brand">
                   <i class="ti ti-file-text"></i> Documentation
                 </a>
               </div>
@@ -243,9 +255,9 @@ const handleConfirmReset = async () => {
 </template>
 
 <style scoped>
-.btn-check:checked + .btn-outline-secondary {
-  background-color: var(--bs-primary);
-  border-color: var(--bs-primary);
+.input-check:checked + .selection-item {
+  background-color: var(--brand);
+  border-color: var(--brand);
   color: white;
 }
 

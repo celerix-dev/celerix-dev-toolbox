@@ -1,5 +1,9 @@
-@import './base.css';
-@import "./components/clock.css";
-@import "./components/donkers-base64.css";
-@import "./components/donkers-uuid.css";
-@import "./components/donkers-jwt.css";
+/*@import './base.css';*/
+/*@import "./components/donkers-uuid.css";*/
+
+body {
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    cursor: default;
+}

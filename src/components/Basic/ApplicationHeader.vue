@@ -45,12 +45,12 @@ const takeScreenshot = async () => {
         // but that's bad UX.
         // The user says "now the 'busy' indication appears on the screenshot".
         // To fix this, we can wait a bit after isCapturing = true, then hide the spinner JUST for the capture.
-        
+
         await nextTick();
         // Even with nextTick, the spinner is there.
         // Let's use a small timeout to ensure the UI has updated.
         await new Promise(resolve => setTimeout(resolve, 100));
-        
+
         // To really avoid it, we might need to hide the button completely.
         const sectionName = (route.name as string) || 'app';
         const savedPath = await screenshotService.captureAndSave(sectionName);
@@ -67,42 +67,39 @@ const takeScreenshot = async () => {
 </script>
 
 <template>
-    <div class="navbar navbar-expand-md docs-navbar sticky-top glass-bg justify-content-between p-3" style="height: 61px;z-index:1024">
-        <div id="breadcrumbs" class="align-content-center ps-4 ps-md-0" style="height: 20px"></div>
-        <div id="page-context"></div>
+
+        <div>&nbsp;</div>
         <div class="d-flex">
-            <div class="d-flex gap-1">
-                <button v-if="!isCapturing" class="btn btn-outline-info" @click="takeScreenshot" title="Take Screenshot">
-                    <span class="bg-color-light">
-                        <i class="ti ti-camera-bolt"></i>
-                    </span>
+            <div class="d-flex g-1">
+                <button v-if="!isCapturing" class="cx-button" @click="takeScreenshot" title="Take Screenshot">
+                    <i class="ti ti-camera-bolt"></i>
                 </button>
-                <button v-else class="btn btn-outline-info" disabled title="Capturing...">
+                <button v-else class="cx-button" disabled title="Capturing...">
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
                 </button>
                 <div id="screenshotButton" class="donkers-button round large icon" aria-hidden="true"></div>
 
-                <div class="dropdown">
-                    <button class="btn btn-outline-info dropdown-toggle" style="min-width: 120px" type="button" data-bs-toggle="dropdown" data-bs-display="static" aria-expanded="false">
+                <div class="dropdown" data-cx-dropdown>
+                    <div class="cx-button dropdown-toggle" data-cx-toggle="dropdown" aria-expanded="false">
                         <i class="ti ti-user-circle me-1"></i>
-                        <span>{{ userStore.userDisplayName }}</span>
-                    </button>
+                        {{ userStore.userDisplayName }}
+                    </div>
 
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><h6 class="dropdown-header">Your account</h6></li>
                         <li>
-                            <RouterLink :to="{ name: 'profile' }" class="dropdown-item" aria-current="true" data-bs-dismiss="dropdown"> <i class="ti ti-user-star"></i> Profile </RouterLink>
+                            <RouterLink :to="{ name: 'profile' }" class="dropdown-item" aria-current="true"> <i class="ti ti-user-star"></i> Profile </RouterLink>
                         </li>
                         <li>
-                            <RouterLink :to="{ name: 'settings' }" class="dropdown-item" aria-current="true" data-bs-dismiss="dropdown"> <i class="ti ti-adjustments-cog"></i> Settings </RouterLink>
+                            <RouterLink :to="{ name: 'settings' }" class="dropdown-item" aria-current="true"> <i class="ti ti-adjustments-cog"></i> Settings </RouterLink>
                         </li>
                         <li>
-                            <RouterLink :to="{ name: 'data-viewer' }" class="dropdown-item" aria-current="true" data-bs-dismiss="dropdown"> <i class="ti ti-database"></i> Data Viewer </RouterLink>
+                            <RouterLink :to="{ name: 'data-viewer' }" class="dropdown-item" aria-current="true"> <i class="ti ti-database"></i> Data Viewer </RouterLink>
                         </li>
                         <li><hr class="dropdown-divider"></li>
                         <li><h6 class="dropdown-header">Dashboard</h6></li>
                         <li>
-                            <a href="#" class="dropdown-item text-danger" @click.prevent="showResetConfirm = true" data-bs-dismiss="dropdown">
+                            <a href="#" class="dropdown-item text-danger" @click.prevent="showResetConfirm = true">
                                 <i class="ti ti-refresh"></i> Reset Dashboard
                             </a>
                         </li>
@@ -110,7 +107,6 @@ const takeScreenshot = async () => {
                 </div>
             </div>
         </div>
-    </div>
 
     <ConfirmationModal
         :show="showResetConfirm"

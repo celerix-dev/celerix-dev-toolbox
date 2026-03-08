@@ -49,9 +49,9 @@ const process = async () => {
       </div>
     </div>
     <div class="base64-app-input">
-      <div class="w-75 h-100" style="">
+      <div class="cx-w-75 cx-h-100" style="">
         <div class="card mb-2">
-          <div class="card-header d-flex justify-content-between">Input <button class="btn btn-primary btn-sm" @click="process">
+          <div class="card-header d-flex justify-between">Input <button class="cx-button small" @click="process">
             <span v-if="selectedStyle==='encode'">Base64 Encode</span>
             <span v-if="selectedStyle==='decode'">Base64 Decode</span>
           </button></div>
@@ -68,7 +68,7 @@ const process = async () => {
         </div>
 
         <div class="card">
-          <div class="card-header d-flex justify-content-between">Result <CopyToClipboard :text="outputText" /></div>
+          <div class="card-header d-flex justify-between">Result <CopyToClipboard :text="outputText" /></div>
           <div class="card-body">
                     <textarea
                         id="output-text"
@@ -86,3 +86,83 @@ const process = async () => {
     </div>
   </div>
 </template>
+<style scoped>
+.mini-app {
+    margin-top: 20px;
+
+    input:not([type="checkbox"]):not([type="radio"]), textarea {
+        border: 1px solid var(--bs-border-color);
+        border-radius: var(--s-1);
+        background: var(--bg-base) none repeat scroll 0 0;
+        outline: currentcolor none medium;
+        width: 100%;
+        padding: var(--s-1);
+
+        &::placeholder {
+            color: var(--placeholder-color);
+        }
+
+        &:focus {
+            border: 1px solid var(--bs-secondary-text-emphasis);
+        }
+    }
+
+    input:not([type="checkbox"]):not([type="radio"]) {
+        /*height: 32px;*/
+
+        &:disabled {
+            background: var(--bs-btn-disabled-color);
+            cursor: not-allowed;
+        }
+    }
+
+}
+.donkers-app-base64 {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+
+    .base64-app-header {
+        display: flex;
+        font-size: 2rem;
+        justify-content: center;
+        align-items: center;
+        font-weight: 600;
+        white-space: nowrap;
+
+        i {
+            margin-left: 10px;
+            font-size: 2rem;
+        }
+    }
+
+    .base64-app-options {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        //font-size: 1rem;
+        margin-top: 1rem;
+        margin-bottom: 1rem;
+        white-space: nowrap;
+    }
+
+    .base64-app-input {
+        display: flex;
+        justify-content: center;
+
+        textarea {
+            font-family: monospace !important;
+
+            &::placeholder {
+                opacity: 0.35;
+                /*font-size: 0.8rem;*/
+            }
+
+            &.error {
+                border-color: #ff0000 !important;
+            }
+        }
+    }
+}
+</style>
